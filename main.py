@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import datetime
 import logging
+from src.dataloader import cargar_datos
 
 
 #Log para el main
@@ -19,27 +20,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-#Funcion apr cargar  datios
-path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
-
-def cargar_datos(path: str) -> pd.DataFrame | None:
-    logger.info("Inicio de la funcion cargar_datos")
-    try:
-        df = pd.read_csv(path)
-        logger.info("Datos cargados correctamente con filas: %d y columnas: %d", df.shape[0], df.shape[1])
-        return df
-    except Exception as e:
-        logger.error("Error al cargar los datos: %s", e)
-        raise # Crashear el programa si no cargo el df.
-            
 
 
 def main():
+    print("Hola Mundo desde main!")
     logger.info("Inicio de ejecucion del programa")
-    print("Hola mundo desde main!")
     df = cargar_datos(path)
     print(df.head(4))
-    logger.info("Fin de ejecucion del programa")
+    logger.info(f"Fin de ejecucion del programa. Revisar detalle en logs/{nombre}")
 
 if __name__ == "__main__": # Asegura que solo se ejecute main() si corremos "python main.py" en terminal, pero no ejecute main() si lo importamos en otro archivo.
     main()
