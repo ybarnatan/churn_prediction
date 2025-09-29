@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 #Funcion para  cargar  datios
-path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
 
 def cargar_datos(path: str) -> pd.DataFrame | None:
     logger.info("Inicio de la funcion cargar_datos")

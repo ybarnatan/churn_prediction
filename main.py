@@ -9,6 +9,8 @@ from src.dataloader import cargar_datos
 os.makedirs("logs", exist_ok=True) #Corroboro que exista la carpeta logs
 fecha = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 nombre = f"log_fecha_{fecha}.log"
+path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
+
 
 logging.basicConfig(
     level=logging.DEBUG,
