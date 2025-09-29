@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     logger.info("Inicio de ejecucion del programa")
-    print("Hola mundo desde main! ... ")
+    print("Hola mundo desde main!")
     
     
     logger.info("Fin de ejecucion del programa")
