@@ -161,8 +161,6 @@ def trait_type():
     "clase_ternaria": "Otro"
 }
 
-
-
     # Convertir a DataFrame
     df_vars = pd.DataFrame([
         {"campo": var, "tipo_variable": tipo}
