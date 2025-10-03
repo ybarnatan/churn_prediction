@@ -167,5 +167,9 @@ def trait_type():
         for var, tipo in variables_tipo.items()
     ])
 
+
     return df_vars
 
+# Ej de uso
+# a = trait_type()
+#print(a.head(10))  # Muestra las primeras 10 filas del DataFrame generado

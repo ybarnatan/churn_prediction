@@ -4,12 +4,13 @@ import datetime
 import logging
 from src.data_loader import cargar_datos
 import src.feature_engeneering as FeatEng
+from src.conf import *
+
 
 #Log para el main
 os.makedirs("logs", exist_ok=True) #Corroboro que exista la carpeta logs
 fecha = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 nombre = f"log_fecha_{fecha}.log"
-
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 
+
 def main():
     logger.info("Inicio de ejecucion del programa")
     # Carga de datos
@@ -30,13 +32,13 @@ def main():
     df = cargar_datos(path)
     
     # Feature engineering | Lags
-    atributos = ["ctrx_quarter"] #Atributos para los cuales quiero crear lags
-    cant_lags = 5 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
-    df = FeatEng.crear_lags(df, columnas = atributos, cant_lag = cant_lags)
+    # atributos_lags = ["ctrx_quarter"] #Atributos para los cuales quiero crear lags
+    # cant_lags = 5 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
+    # df = FeatEng.crear_lags(df, columnas = atributos_lags, cant_lag = cant_lags)
     
     # Guardar el df resultante
     logger.info("Guardando el DataFrame resultante en un archivo CSV")
-    output_path = "data/competencia_01_conLags.csv"
+    output_path = "data/competencia_01.csv"
     df.to_csv(output_path, index=False)    
     
     
