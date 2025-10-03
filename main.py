@@ -41,8 +41,8 @@ def main():
     output_path = "data/competencia_01.csv"
     df.to_csv(output_path, index=False)    
     
-    
-    
+    print("Semillas que vienen del config.yaml:", SEMILLA)
+
     
     logger.info(f"Fin de ejecucion del programa. Revisar detalle en logs/{nombre}")
 
