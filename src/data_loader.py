@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import duckdb
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,62 @@ def cargar_datos(path: str) -> pd.DataFrame | None:
     except Exception as e:
         logger.error("Error al cargar los datos: %s", e)
         raise # Crashear el programa si no cargo el df.
+
+
+
+def agregar_clase_ternaria_duckdb(df_original):
+    """
+    Usa DuckDB y SQL para agregar la columna clase_ternaria al DataFrame original.
+
+    Parámetros:
+        df_original (pd.DataFrame): DataFrame original que contiene al menos
+                                    numero_de_cliente y foto_mes
+
+    Retorna:
+        pd.DataFrame: DataFrame con clase_ternaria agregada
+    """
+    con = duckdb.connect()
+
+    # Registrar df_original como tabla temporal
+    con.register('df_original', df_original)
+
+    # Crear tabla temporal con la clase_ternaria usando SQL
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE base_target AS
+        SELECT 
+            numero_de_cliente,
+            foto_mes,
+            CASE 
+                WHEN foto_mes_1 IS NULL THEN 'BAJA+1'
+                WHEN foto_mes_2 IS NULL THEN 'BAJA+2'
+                ELSE 'CONTINUA'
+            END AS clase_ternaria
+        FROM (
+            SELECT 
+                numero_de_cliente,
+                foto_mes,
+                LEAD(foto_mes, 1) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS foto_mes_1,
+                LEAD(foto_mes, 2) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS foto_mes_2
+            FROM df_original
+        ) sub
+        WHERE foto_mes <= 202104
+    """)
+
+    # Hacer el join con el DataFrame original
+    result = con.execute("""
+        SELECT 
+            o.*, 
+            t.clase_ternaria
+        FROM df_original o
+        LEFT JOIN base_target t
+        ON o.numero_de_cliente = t.numero_de_cliente
+           AND o.foto_mes = t.foto_mes
+    """).fetchdf()
+
+    con.close()
+    return result
+
+            
             
 def convertir_clase_ternaria_a_target(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -60,6 +117,6 @@ def convertir_clase_ternaria_a_target(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Conversión completada:")
     logger.info(f"  Original - CONTINUA: {n_continua_orig}, BAJA+1: {n_baja1_orig}, BAJA+2: {n_baja2_orig}")
     logger.info(f"  Binario - 0: {n_ceros}, 1: {n_unos}")
-    logger.info(f"  Distribución: {n_unos/(n_ceros + n_unos)*100:.2f}% casos positivos")
+    logger.info(f"  Distribución: {n_unos/(n_ceros + n_unos)*100:.2f}% casos positivos (i.e. 1's / total)")
   
     return df_result

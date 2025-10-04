@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import datetime
 import logging
-from src.data_loader import cargar_datos
+from src.data_loader import cargar_datos, convertir_clase_ternaria_a_target, agregar_clase_ternaria_duckdb
 import src.feature_engeneering as FeatEng
 from src.conf import *
 
@@ -31,10 +31,18 @@ def main():
     path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
     df = cargar_datos(path)
     
+    #Crear clase_ternaria 
+    logger.info("Inicio de creacion clase ternaria")
+    df = agregar_clase_ternaria_duckdb(df)
+
+    
     # Feature engineering | Lags
     # atributos_lags = ["ctrx_quarter"] #Atributos para los cuales quiero crear lags
     # cant_lags = 5 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
     # df = FeatEng.crear_lags(df, columnas = atributos_lags, cant_lag = cant_lags)
+    
+    #Convertir clase_ternaria a target binario
+    df = convertir_clase_ternaria_a_target(df)
     
     # Guardar el df resultante
     logger.info("Guardando el DataFrame resultante en un archivo CSV")
