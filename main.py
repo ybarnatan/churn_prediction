@@ -52,6 +52,9 @@ def main():
     #Crear clase_ternaria 
     logger.info("Inicio de creacion clase ternaria")
     df = agregar_clase_ternaria_duckdb(df_original)
+    print("Distribución datos x foto_mes ternaria duckdb:")
+    print(df['foto_mes'].value_counts().sort_index())
+    
     print(df.head(5))
 
     # Feature engineering | Lags
@@ -60,9 +63,17 @@ def main():
     # df = FeatEng.crear_lags(df, columnas = atributos_lags, cant_lag = cant_lags)
     
     # Feature engineering | Deltas
+    #atributos_deltas = ["ctrx_quarter"]
+    #cant_deltas = 3
+    #df = FeatEng.crear_deltas(df, columnas=atributos_deltas, cant_deltas=cant_deltas)
+
+        
     
     # Convertir clase_ternaria a target binario (CONT=0, BAJA+1 y BAJA+2 = 1)
     df = convertir_clase_ternaria_a_target(df)
+    print("Distribución datos x foto_mes df desp de ternaria a target:")
+    print(df_original['foto_mes'].value_counts().sort_index())
+    
     print(df.head(5))
     
     # Optimizacion de hiperparametros
