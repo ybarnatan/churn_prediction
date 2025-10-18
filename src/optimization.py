@@ -7,7 +7,7 @@ import logging
 import json
 import os
 from datetime import datetime
-from .conf import *
+from .config import *
 from .gain_function import calcular_ganancia, ganancia_lgb_binary, ganancia_evaluator, lgb_gan_eval
 
 
@@ -39,35 +39,35 @@ def objetivo_ganancia(trial, df) -> float:
         'objective': 'binary',
         'metric': 'None',
         'boosting_type': 'gbdt',
-        'first_metric_only': True,
-        'boost_from_average': True,
-        'feature_pre_filter': False,
         'max_bin': 31,
-        'num_leaves': trial.suggest_int('num_leaves', conf.PARAMETROS_LGB.num_leaves[0], conf.PARAMETROS_LGB.num_leaves[1]),
-        'learning_rate': trial.suggest_float('learn_rate', conf.PARAMETROS_LGB.learn_rate[0], conf.PARAMETROS_LGB.learn_rate[1], log=True),
-        'feature_fraction': trial.suggest_float('feature_fraction', conf.PARAMETROS_LGB.feature_fraction[0], conf.PARAMETROS_LGB.feature_fraction[1]),
-        'bagging_fraction': trial.suggest_float('bagging_fraction', conf.PARAMETROS_LGB.bagging_fraction[0], conf.PARAMETROS_LGB.bagging_fraction[1]),
-        'min_child_samples': trial.suggest_int('min_child_samples', conf.PARAMETROS_LGB.min_child_samples[0], conf.PARAMETROS_LGB.min_child_samples[1]),
-        'max_depth': trial.suggest_int('max_depth', conf.PARAMETROS_LGB.max_depth[0], conf.parametros_lgb.max_depth[1]),
+        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', PARAMETROS_LGB['min_data_in_leaf'][0], PARAMETROS_LGB['min_data_in_leaf'][1]),
+        'num_leaves': trial.suggest_int('num_leaves', PARAMETROS_LGB['num_leaves'][0], PARAMETROS_LGB['num_leaves'][1]),
+        'learning_rate': trial.suggest_float('learning_rate', PARAMETROS_LGB['learning_rate'][0], PARAMETROS_LGB['learning_rate'][1], log=True),
+        'feature_fraction': trial.suggest_float('feature_fraction', PARAMETROS_LGB['feature_fraction'][0], PARAMETROS_LGB['feature_fraction'][1]),
+        'bagging_fraction': trial.suggest_float('bagging_fraction', PARAMETROS_LGB['bagging_fraction'][0], PARAMETROS_LGB['bagging_fraction'][1]),
+        'min_child_samples': trial.suggest_int('min_child_samples', PARAMETROS_LGB['min_child_samples'][0], PARAMETROS_LGB['min_child_samples'][1]),
+        'max_depth': trial.suggest_int('max_depth', PARAMETROS_LGB['max_depth'][0], PARAMETROS_LGB['max_depth'][1]),
         'seed': SEMILLA[0],
         'verbose': -1
     }
 
     # #Preparo datasets para train y validacion -> Filtro segun periodos
     if isinstance(MES_TRAIN, list): #Si df_train es una lista
-        df_train = df[df['foto_mes'].astype(str).isin(MES_TRAIN)]
+        meses_train_str = [str(m) for m in MES_TRAIN]# CONVERTIMOS LA LISTA DE VALORES A CADENAS ANTES DE USAR .isin()
+        df_train = df[df['foto_mes'].astype(str).isin(meses_train_str)]   
     else: #Si es un string i.e. solo un mes.
-        df_train = df[df['foto_mes'].astype(str) == MES_TRAIN]
+        mes_train_str = str(MES_TRAIN)        # CONVERTIMOS EL VALOR ÚNICO A CADENA POR CONSISTENCIA
+        df_train = df[df['foto_mes'].astype(str) == mes_train_str]
     
     df_val = df[df['foto_mes'] == MES_VALIDACION]
     
     
-    # Validaciones tempranas por posibles errores.
+    # Validaciones tempranas por posibles errores de filtrado en fechas/formato de fechas.
     if df_train.empty:
         raise ValueError("df_train está vacío. Revisá PERIODO_ENTRENAMIENTO y que existan datos.")
     if df_val.empty:
         raise ValueError("df_val está vacío. Revisá PERIODO_VALIDACION y que existan datos.")
-    if df_train['clase_binaria'].nunique() < 2:
+    if df_train['clase_ternaria'].nunique() < 2:
         raise ValueError("df_train no contiene ambas clases (0 y 1).")
 
     # Usar target (con clase ternaria ya convertida a binaria)
@@ -115,7 +115,7 @@ def guardar_iteracion(trial, ganancia, archivo_base=None):
         archivo_base: Nombre base del archivo (si es None, usa el de config.yaml)
     """
     if archivo_base is None:
-        archivo_base = conf.STUDY_NAME
+        archivo_base = STUDY_NAME #conf.STUDY_NAME no hce falta porque ya se importó todo de config.
   
     # Nombre del archivo único para todas las iteraciones
     archivo = f"resultados/{archivo_base}_iteraciones.json"
@@ -190,8 +190,18 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
         # load_if_exists=True,
     )
 
+    #Corro la optimización
     study.optimize(lambda t: objetivo_ganancia(t, df), n_trials=n_trials, show_progress_bar=True, n_jobs=n_jobs, gc_after_trial=True)
 
+    # Generar y guardar el gráfico
+    fig_importancia = optuna.visualization.plot_param_importances(study)
+    fig_importancia.write_html(f"graficos_resultados/{STUDY_NAME}_FeatImportance.html")
+
+    fig_contour = optuna.visualization.plot_contour(study, params=['num_leaves', 'min_data_in_leaf'])
+    fig_contour.write_html(f"graficos_resultados/{STUDY_NAME}_ContourPlot.html")
+
+    fig_slice = optuna.visualization.plot_slice(study)
+    fig_slice.write_html(f"graficos_resultados/{STUDY_NAME}_Slice.html")
     # Resultados
     logger.info(f"Mejor ganancia: {study.best_value:,.0f}")
     logger.info(f"Mejores parámetros: {study.best_params}")

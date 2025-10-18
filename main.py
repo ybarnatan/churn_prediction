@@ -4,7 +4,7 @@ import datetime
 import logging
 from src.data_loader import cargar_datos, convertir_clase_ternaria_a_target, agregar_clase_ternaria_duckdb
 import src.feature_engeneering as FeatEng
-from src.conf import *
+from src.config import *
 from src.optimization import *
 import optuna
 import lightgbm as lgb
@@ -67,14 +67,13 @@ def main():
     #cant_deltas = 3
     #df = FeatEng.crear_deltas(df, columnas=atributos_deltas, cant_deltas=cant_deltas)
 
-        
-    
     # Convertir clase_ternaria a target binario (CONT=0, BAJA+1 y BAJA+2 = 1)
     df = convertir_clase_ternaria_a_target(df)
     print("Distribución datos x foto_mes df desp de ternaria a target:")
     print(df_original['foto_mes'].value_counts().sort_index())
     
     print(df.head(5))
+    
     
     # Optimizacion de hiperparametros
     study = optimizacion_bayesiana(df, n_trials = 100)

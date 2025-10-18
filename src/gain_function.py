@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from src.conf import *
+from src.config import *
 import logging
 import polars as pl
 

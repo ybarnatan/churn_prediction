@@ -14,10 +14,10 @@ try:
     with open(PATH_CONFIG, "r") as f:
         _cfgGeneral = yaml.safe_load(f) #Leo el archivo conf.yaml
         _cfg = _cfgGeneral["competencia01"] #Me quedo con la seccion competencia01
-
+        
         # Asigno las variables de configuracion:
-        #Los 2do's parametro es el valor por defecto para el yaml.
-        STUDY_NAME = _cfgGeneral.get("STUDY_NAME", "Wendsday")
+        #En c/u, el  2do's parametro es el valor por defecto para el yaml.
+        STUDY_NAME = _cfgGeneral.get("STUDY_NAME", "Wednesday")
         DATA_PATH = _cfg.get("DATA_PATH", "../data/competencia.csv")
         SEMILLA = _cfg.get("SEMILLA", [42])
         MES_TRAIN = _cfg.get("MES_TRAIN", "202102")
@@ -25,6 +25,8 @@ try:
         MES_TEST = _cfg.get("MES_TEST", "202104")
         GANANCIA_ACIERTO = _cfg.get("GANANCIA_ACIERTO", None)
         COSTO_ESTIMULO = _cfg.get("COSTO_ESTIMULO", None)
+        PARAMETROS_LGB = _cfgGeneral.get("PARAMETROS_LGB", {})
+        UMBRAL = _cfg.get("UMBRAL", 0.025)
 
 except Exception as e:
     logger.error(f"Error al cargar el archivo de configuracion: {e}")

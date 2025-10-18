@@ -2,7 +2,7 @@ STUDY_NAME:  "LGBM_optimization_Competencia01_Exp005"
 
 competencia01:
   DATA_PATH: "data/competencia_01_crudo.csv"
-  SEMILLA:  [12,13,14,15,16]
+  SEMILLA:  [80021, 80039, 80051, 80071, 80077]
   MES_TRAIN: [202101, 202102,202103 ] # 202102
   MES_VALIDACION: 202104
   MES_TEST: 202106
@@ -14,13 +14,12 @@ competencia01:
 
 PARAMETROS_LGB:
     n_trial: 100
-    num_leaves: [10, 300]
+    num_leaves: [8, 100]
     num_iterations: [50, 1000]
     feature_fraction: [0.4, 1.0]
-    learn_rate: [0.01, 0.3]
+    learning_rate: [0.005, 0.3]
     bagging_fraction: [0.4, 1.0]
     min_child_samples: [5, 100]
     max_depth: [3, 15]
-    reg_alpha: [0.0, 10.0]
-    reg_lambda: [0.0, 10.0]
-    bin: [30, 31]
+    bin: [31]
+    min_data_in_leaf: [1, 1000]
