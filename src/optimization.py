@@ -8,64 +8,10 @@ import json
 import os
 from datetime import datetime
 from .conf import *
-from .gain_function import calcular_ganancia, ganancia_lgb_binary
+from .gain_function import calcular_ganancia, ganancia_lgb_binary, ganancia_evaluator, lgb_gan_eval
+
 
 logger = logging.getLogger(__name__)
-
-
-
-def guardar_iteracion(trial, ganancia, archivo_base=None):
-    """
-    Guarda cada iteración de la optimización en un único archivo JSON.
-
-    Args:
-        trial: Trial de Optuna
-        ganancia: Valor de ganancia obtenido
-        archivo_base: Nombre base del archivo (si es None, usa el de config.yaml)
-    """
-    if archivo_base is None:
-        archivo_base = STUDY_NAME
-
-    # Nombre del archivo único para todas las iteraciones
-    archivo = f"Resultados/{archivo_base}_iteraciones.json"
-
-    # Datos de esta iteración
-    iteracion_data = {
-        'trial_number': trial.number,
-        'params': trial.params,
-        'value': float(ganancia),
-        'datetime': datetime.now().isoformat(),
-        'state': 'COMPLETE',  # Si llegamos aquí, el trial se completó exitosamente
-        'configuracion': {
-        'semilla': SEMILLA[0],
-        'mes_train': MES_TRAIN,
-        'mes_validacion': MES_VALIDACION,
-        'undersampling': UNDERSAMPLING_FRACTION
-        }
-    }
-
-    # Cargar datos existentes si el archivo ya existe
-    if os.path.exists(archivo):
-        with open(archivo, 'r') as f:
-            try:
-                datos_existentes = json.load(f)
-                if not isinstance(datos_existentes, list):
-                    datos_existentes = []
-            except json.JSONDecodeError:
-                datos_existentes = []
-    else:
-        datos_existentes = []
-
-    # Agregar nueva iteración
-    datos_existentes.append(iteracion_data)
-
-    # Guardar todas las iteraciones en el archivo
-    with open(archivo, 'w') as f:
-        json.dump(datos_existentes, f, indent=2)
-
-    logger.info(f"Iteración {trial.number} guardada en {archivo}")
-    logger.info(f"Ganancia: {ganancia:,.0f}" + "---" + "Parámetros: {params}")
-
 
 
 
@@ -87,25 +33,8 @@ def objetivo_ganancia(trial, df) -> float:
     Returns:
     float: ganancia total
     """
-    # Filtrar según períodos
-    df_train = df[df['foto_mes'].isin(MES_TRAIN)]
-    df_val = df[df['foto_mes'] == MES_VALIDACION]
-
-    # Validaciones tempranas
-    if df_train.empty:
-        raise ValueError("df_train está vacío. Revisá PERIODO_ENTRENAMIENTO y que existan datos.")
-    if df_val.empty:
-        raise ValueError("df_val está vacío. Revisá PERIODO_VALIDACION y que existan datos.")
-    if df_train['clase_binaria'].nunique() < 2:
-        raise ValueError("df_train no contiene ambas clases (0 y 1).")
-
+ 
     # Hiperparámetros a optimizar
-    num_leaves = trial.suggest_int('num_leaves', 8, 100),
-    learning_rate = trial.suggest_float('learning_rate', 0.005, 0.3), # a mas bajo, más iteraciones necesita
-    min_data_in_leaf = trial.suggest_int('min_data_in_leaf', 1, 1000),
-    feature_fraction = trial.suggest_float('feature_fraction', 0.1, 1.0),
-    bagging_fraction = trial.suggest_float('bagging_fraction', 0.1, 1.0),
-
     params = {
         'objective': 'binary',
         'metric': 'None',
@@ -114,50 +43,118 @@ def objetivo_ganancia(trial, df) -> float:
         'boost_from_average': True,
         'feature_pre_filter': False,
         'max_bin': 31,
-        'num_leaves': num_leaves,
-        'learning_rate': learning_rate,
-        'min_data_in_leaf': min_data_in_leaf,
-        'feature_fraction': feature_fraction,
-        'bagging_fraction': bagging_fraction,
+        'num_leaves': trial.suggest_int('num_leaves', conf.PARAMETROS_LGB.num_leaves[0], conf.PARAMETROS_LGB.num_leaves[1]),
+        'learning_rate': trial.suggest_float('learn_rate', conf.PARAMETROS_LGB.learn_rate[0], conf.PARAMETROS_LGB.learn_rate[1], log=True),
+        'feature_fraction': trial.suggest_float('feature_fraction', conf.PARAMETROS_LGB.feature_fraction[0], conf.PARAMETROS_LGB.feature_fraction[1]),
+        'bagging_fraction': trial.suggest_float('bagging_fraction', conf.PARAMETROS_LGB.bagging_fraction[0], conf.PARAMETROS_LGB.bagging_fraction[1]),
+        'min_child_samples': trial.suggest_int('min_child_samples', conf.PARAMETROS_LGB.min_child_samples[0], conf.PARAMETROS_LGB.min_child_samples[1]),
+        'max_depth': trial.suggest_int('max_depth', conf.PARAMETROS_LGB.max_depth[0], conf.parametros_lgb.max_depth[1]),
         'seed': SEMILLA[0],
         'verbose': -1
     }
 
-    # MES_TRAIN puede ser un unico mes o una lista de meses
-    if isinstance(MES_TRAIN, list):
-        periodos_cv = MES_TRAIN + [MES_VALIDACION]
-    else:
-        periodos_cv = [MES_TRAIN, MES_VALIDACION]
+    # #Preparo datasets para train y validacion -> Filtro segun periodos
+    if isinstance(MES_TRAIN, list): #Si df_train es una lista
+        df_train = df[df['foto_mes'].astype(str).isin(MES_TRAIN)]
+    else: #Si es un string i.e. solo un mes.
+        df_train = df[df['foto_mes'].astype(str) == MES_TRAIN]
+    
+    df_val = df[df['foto_mes'] == MES_VALIDACION]
+    
+    
+    # Validaciones tempranas por posibles errores.
+    if df_train.empty:
+        raise ValueError("df_train está vacío. Revisá PERIODO_ENTRENAMIENTO y que existan datos.")
+    if df_val.empty:
+        raise ValueError("df_val está vacío. Revisá PERIODO_VALIDACION y que existan datos.")
+    if df_train['clase_binaria'].nunique() < 2:
+        raise ValueError("df_train no contiene ambas clases (0 y 1).")
 
-    df_train = df[df['foto_mes'].isin(periodos_cv)]
-    logging.info(df_train.shape)
-    X_train = df_train.drop(['clase_ternaria', 'foto_mes'], axis=1)
-    y_train = df_train['clase_ternaria']
+    # Usar target (con clase ternaria ya convertida a binaria)
+    
+    y_train = df_train['clase_ternaria'].values
+    y_val = df_val['clase_ternaria'].values
 
+    # Features (excluir target)
+    X_train = df_train.drop(columns=['clase_ternaria'])
+    X_val = df_val.drop(columns=['clase_ternaria'])
+
+    # Entrenar modelo con función de ganancia personalizada
     train_data = lgb.Dataset(X_train, label=y_train)
+    val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
 
-    cv_results = lgb.cv(
-        params,
+    model = lgb.train(
+        params, 
         train_data,
-        feval= ganancia_lgb_binary,
-        stratified=True,
-        shuffle=True,
-        nfold=5,
-        seed=SEMILLA[0],
-        callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False), lgb.log_evaluation(0)]
+        valid_sets=[val_data],
+        feval=ganancia_lgb_binary, 
+        callbacks=[lgb.early_stopping(15), lgb.log_evaluation(0)]
     )
 
-    ganancia_total = np.max(cv_results['valid ganancia-mean'])
+    # Predecir y calcular ganancia
+    y_pred_proba = model.predict(X_val)
+    y_pred_binary = (y_pred_proba >= UMBRAL).astype(int)  # Usar mismo umbral que en ganancia_lgb_binary                  
+    ganancia_total = calcular_ganancia(y_val, y_pred_binary)
 
     # Guardar cada iteración en JSON
-    # Guarda los hiperparam que uso la bayesiana en cada iteracion y el mejor valor de gananacia.
     guardar_iteracion(trial, ganancia_total)
-
-    logger.debug(f"Trial {trial.number}: Ganancia = {ganancia_total:,.0f}")
-
+  
+    logger.info(f"Trial {trial.number}: Ganancia = {ganancia_total:,.0f}")
+  
     return ganancia_total
 
 
+
+def guardar_iteracion(trial, ganancia, archivo_base=None):
+    """
+    Guarda cada iteración de la optimización en un único archivo JSON.
+  
+    Args:
+        trial: Trial de Optuna
+        ganancia: Valor de ganancia obtenido
+        archivo_base: Nombre base del archivo (si es None, usa el de config.yaml)
+    """
+    if archivo_base is None:
+        archivo_base = conf.STUDY_NAME
+  
+    # Nombre del archivo único para todas las iteraciones
+    archivo = f"resultados/{archivo_base}_iteraciones.json"
+  
+    # Datos de esta iteración
+    iteracion_data = {
+        'trial_number': trial.number,
+        'params': trial.params,
+        'value': float(ganancia),
+        'datetime': datetime.now().isoformat(),
+        'state': 'COMPLETE',  # Si llegamos aquí, el trial se completó exitosamente
+        'configuracion': {
+            'semilla': SEMILLA,
+            'mes_train': MES_TRAIN,
+            'mes_validacion': MES_VALIDACION
+        }
+    }
+  
+    # Cargar datos existentes si el archivo ya existe
+    if os.path.exists(archivo):
+        with open(archivo, 'r') as f:
+            try:
+                datos_existentes = json.load(f)
+                if not isinstance(datos_existentes, list):
+                    datos_existentes = []
+            except json.JSONDecodeError:
+                datos_existentes = []
+    else:
+        datos_existentes = []
+  
+    # Agregar nueva iteración
+    datos_existentes.append(iteracion_data)
+  
+    # Guardar todas las iteraciones en el archivo
+    with open(archivo, 'w') as f:
+        json.dump(datos_existentes, f, indent=2)
+  
+    logger.info(f"Iteración {trial.number} guardada en {archivo}")
+    logger.info(f"Ganancia: {ganancia:,.0f}" + "---" + "Parámetros: {params}")
 
 
 
