@@ -70,7 +70,9 @@ def ganancia_lgb_binary(y_pred, y_true):
 
 def ganancia_evaluator(y_pred, y_true) -> float:
     """
-    Función de evaluación personalizada para LightGBM.
+    Función de evaluación personalizada para LightGBM. 
+    USA POLARS.
+    
     Ordena probabilidades de mayor a menor y calcula ganancia acumulada
     para encontrar el punto de máxima ganancia.
   
@@ -103,7 +105,7 @@ def ganancia_evaluator(y_pred, y_true) -> float:
 
 ####################################################################################################################################
 ## Función de ganancia para LightGBM usando el peso de las muestras 
-
+'''
 def lgb_gan_eval(y_pred, data):
     # Autor: Guillermo Teran
     weight = data.get_weight()
@@ -125,6 +127,32 @@ def lgb_gan_eval(y_pred, data):
     ganancia_maxima = df_ordenado.select(pl.col('ganancia_acumulada').max()).item()
   
     return 'gan_eval', ganancia_maxima , True
+'''
+
+def lgb_gan_eval(y_pred, data):
+    # Autor: Guillermo Teran
+    # 🚨 CORRECCIÓN: Usar get_label() para obtener los valores reales (y_true)
+    y_true = data.get_label() 
+    # weight = data.get_weight() # Ya no es necesario
+
+    # Convertir a DataFrame de Polars para procesamiento eficiente
+    # 🚨 CORRECCIÓN: Usar y_true en lugar de y_true_weight
+    df_eval = pl.DataFrame({'y_true': y_true,'y_pred_proba': y_pred})
+
+    # Ordenar por probabilidad descendente
+    df_ordenado = df_eval.sort('y_pred_proba', descending=True)
+
+    # Calcular ganancia individual para cada cliente
+    # 🚨 CORRECCIÓN: La condición debe ser: si el label es 1 (BAJA)
+    df_ordenado = df_ordenado.with_columns([pl.when(pl.col('y_true') == 1).then(GANANCIA_ACIERTO).otherwise(-COSTO_ESTIMULO).alias('ganancia_individual')])
+ 
+    # Calcular ganancia acumulada
+    df_ordenado = df_ordenado.with_columns([pl.col('ganancia_individual').cast(pl.Int64).cum_sum().alias('ganancia_acumulada')])
+    
+    # Encontrar la ganancia máxima
+    ganancia_maxima = df_ordenado.select(pl.col('ganancia_acumulada').max()).item()
+ 
+    return 'gan_eval', ganancia_maxima , True 
 
 #########################################################################################################################
 def analisis_ganancia_completo_polars(y_true, y_pred_proba) -> pd.DataFrame:

@@ -1,4 +1,4 @@
-STUDY_NAME:  "LGBM_optimization_Competencia01_Exp005"
+STUDY_NAME:  "LGBM_optimization_Competencia01_Experimento01"
 
 competencia01:
   DATA_PATH: "data/competencia_01_crudo.csv"
@@ -16,10 +16,8 @@ PARAMETROS_LGB:
     n_trial: 100
     num_leaves: [8, 100]
     num_iterations: [50, 1000]
-    feature_fraction: [0.4, 1.0]
+    feature_fraction: [0.1, 1.0]
     learning_rate: [0.005, 0.3]
-    bagging_fraction: [0.4, 1.0]
-    min_child_samples: [5, 100]
-    max_depth: [3, 15]
-    bin: [31]
+    bagging_fraction: [0.1, 1.0]
     min_data_in_leaf: [1, 1000]
+

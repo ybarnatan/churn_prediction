@@ -45,18 +45,16 @@ def objetivo_ganancia(trial, df) -> float:
         'learning_rate': trial.suggest_float('learning_rate', PARAMETROS_LGB['learning_rate'][0], PARAMETROS_LGB['learning_rate'][1], log=True),
         'feature_fraction': trial.suggest_float('feature_fraction', PARAMETROS_LGB['feature_fraction'][0], PARAMETROS_LGB['feature_fraction'][1]),
         'bagging_fraction': trial.suggest_float('bagging_fraction', PARAMETROS_LGB['bagging_fraction'][0], PARAMETROS_LGB['bagging_fraction'][1]),
-        'min_child_samples': trial.suggest_int('min_child_samples', PARAMETROS_LGB['min_child_samples'][0], PARAMETROS_LGB['min_child_samples'][1]),
-        'max_depth': trial.suggest_int('max_depth', PARAMETROS_LGB['max_depth'][0], PARAMETROS_LGB['max_depth'][1]),
         'seed': SEMILLA[0],
         'verbose': -1
     }
 
     # #Preparo datasets para train y validacion -> Filtro segun periodos
     if isinstance(MES_TRAIN, list): #Si df_train es una lista
-        meses_train_str = [str(m) for m in MES_TRAIN]# CONVERTIMOS LA LISTA DE VALORES A CADENAS ANTES DE USAR .isin()
+        meses_train_str = [str(m) for m in MES_TRAIN]
         df_train = df[df['foto_mes'].astype(str).isin(meses_train_str)]   
     else: #Si es un string i.e. solo un mes.
-        mes_train_str = str(MES_TRAIN)        # CONVERTIMOS EL VALOR ÚNICO A CADENA POR CONSISTENCIA
+        mes_train_str = str(MES_TRAIN)       
         df_train = df[df['foto_mes'].astype(str) == mes_train_str]
     
     df_val = df[df['foto_mes'] == MES_VALIDACION]
@@ -82,7 +80,31 @@ def objetivo_ganancia(trial, df) -> float:
     # Entrenar modelo con función de ganancia personalizada
     train_data = lgb.Dataset(X_train, label=y_train)
     val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
+    
+     #Aquí se entrena y valida el modelo con 5-fold cross-validation, usando los hiperparámetros definidos arriba.
+    cv_result = lgb.cv(
+        params,
+        train_data,
+        num_boost_round = 300,      # Modificar, subit y subir... y descomentar la línea inferior
+        #early_stopping_rounds= int(50+5 / (param['learning_rate']))  ,   # Corta el entrenamiento si el modelo deja de mejorar durante N rondas consecutivas.
+        feval=lgb_gan_eval,
+        stratified=True,
+        nfold=5,
+        seed=SEMILLA[0],
+        callbacks=[
+                lgb.early_stopping(stopping_rounds=int(50+5 / (params['learning_rate'])), verbose=False),
+                #lgb.log_evaluation(period=200),
+        ]
+    )
 
+    max_ganancia = max(cv_result['valid gan_eval-mean']) # Toma la máxima ganancia promedio alcanzada entre los 5 folds.
+    best_iter = cv_result['valid gan_eval-mean'].index(max_ganancia) + 1 # Encuentra en qué iteración se logró esa ganancia máxima.
+    trial.set_user_attr("best_iter", best_iter) #Guarda ese dato dentro del trial, así lo podés recuperar después.
+    
+    return max_ganancia * 5  #Como la ganancia es promedio entre los 5 folds, se multiplica por 5 para simular la ganancia total estimada en datos reales (sin dividirlos en folds).
+
+    
+    '''
     model = lgb.train(
         params, 
         train_data,
@@ -93,7 +115,9 @@ def objetivo_ganancia(trial, df) -> float:
 
     # Predecir y calcular ganancia
     y_pred_proba = model.predict(X_val)
-    y_pred_binary = (y_pred_proba >= UMBRAL).astype(int)  # Usar mismo umbral que en ganancia_lgb_binary                  
+    y_pred_binary = (y_pred_proba >= UMBRAL).astype(int)  # Usar mismo umbral que en ganancia_lgb_binary  
+    '''
+                    
     ganancia_total = calcular_ganancia(y_val, y_pred_binary)
 
     # Guardar cada iteración en JSON
