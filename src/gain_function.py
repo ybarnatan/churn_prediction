@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from src.conf import GANANCIA_ACIERTO, COSTO_ESTIMULO
+from src.conf import *
 import logging
+import polars as pl
 
 logger = logging.getLogger(__name__)
-
 
 def calcular_ganancia(y_true, y_pred):
     """
@@ -57,7 +57,7 @@ def ganancia_lgb_binary(y_pred, y_true):
     # Obtener labels verdaderos
     y_true_labels = y_true.get_label()
   
-    # Convertir probabilidades a predicciones binarias (umbral 0.5)
+    # Convertir probabilidades a predicciones binarias (umbral 0.025)
     y_pred_binary = (y_pred > 0.025).astype(int)
   
     # Calcular ganancia usando configuración
@@ -65,3 +65,110 @@ def ganancia_lgb_binary(y_pred, y_true):
   
     # Retornar en formato esperado por LightGBM
     return 'ganancia', ganancia_total, True  # True = higher is better
+
+
+
+def ganancia_evaluator(y_pred, y_true) -> float:
+    """
+    Función de evaluación personalizada para LightGBM.
+    Ordena probabilidades de mayor a menor y calcula ganancia acumulada
+    para encontrar el punto de máxima ganancia.
+  
+    Args:
+        y_pred: Predicciones de probabilidad del modelo
+        y_true: Dataset de LightGBM con labels verdaderos
+  
+    Returns:
+        float: Ganancia total
+    # Autor: Guillermo Teran    
+    """
+    y_true = y_true.get_label()
+  
+    # Convertir a DataFrame de Polars para procesamiento eficiente
+    df_eval = pl.DataFrame({'y_true': y_true,'y_pred_proba': y_pred})
+  
+    # Ordenar por probabilidad descendente
+    df_ordenado = df_eval.sort('y_pred_proba', descending=True)
+  
+    # Calcular ganancia individual para cada cliente
+    df_ordenado = df_ordenado.with_columns([pl.when(pl.col('y_true') == 1).then(GANANCIA_ACIERTO).otherwise(-COSTO_ESTIMULO).alias('ganancia_individual')])
+  
+    # Calcular ganancia acumulada
+    df_ordenado = df_ordenado.with_columns([pl.col('ganancia_individual').cast(pl.Int64).cum_sum().alias('ganancia_acumulada')])
+  
+    # Encontrar la ganancia máxima
+    ganancia_maxima = df_ordenado.select(pl.col('ganancia_acumulada').max()).item()
+  
+    return 'ganancia', ganancia_maxima, True
+
+####################################################################################################################################
+## Función de ganancia para LightGBM usando el peso de las muestras 
+
+def lgb_gan_eval(y_pred, data):
+    # Autor: Guillermo Teran
+    weight = data.get_weight()
+    #y_true = data.get_label()
+
+    # Convertir a DataFrame de Polars para procesamiento eficiente
+    df_eval = pl.DataFrame({'y_true_weight': weight,'y_pred_proba': y_pred})
+
+    # Ordenar por probabilidad descendente
+    df_ordenado = df_eval.sort('y_pred_proba', descending=True)
+
+    # Calcular ganancia individual para cada cliente
+    df_ordenado = df_ordenado.with_columns([pl.when(pl.col('y_true_weight') == 1.00002).then(GANANCIA_ACIERTO).otherwise(-COSTO_ESTIMULO).alias('ganancia_individual')])
+  
+    # Calcular ganancia acumulada
+    df_ordenado = df_ordenado.with_columns([pl.col('ganancia_individual').cast(pl.Int64).cum_sum().alias('ganancia_acumulada')])
+    
+    # Encontrar la ganancia máxima
+    ganancia_maxima = df_ordenado.select(pl.col('ganancia_acumulada').max()).item()
+  
+    return 'gan_eval', ganancia_maxima , True
+
+#########################################################################################################################
+def analisis_ganancia_completo_polars(y_true, y_pred_proba) -> pd.DataFrame:
+    """
+    Realiza un análisis completo de ganancia usando Polars.
+    Ordena probabilidades, calcula ganancia acumulada y encuentra el umbral óptimo.
+  
+    Args:
+        y_true: Valores reales (0 o 1)
+        y_pred_proba: Predicciones de probabilidad del modelo
+    Returns:
+        pd.DataFrame: DataFrame con ganancia máxima, umbral óptimo, mejora en la ganancia con respecto a umbral de 0.025 y clientes óptimos
+    """
+    # Convertir a DataFrame de Polars
+    df_eval = pl.DataFrame({'y_true': y_true, 'y_pred_proba': y_pred_proba})
+  
+    # Ordenar por probabilidad descendente
+    df_ordenado = df_eval.sort('y_pred_proba', descending=True)
+  
+    # Calcular ganancia individual para cada cliente
+    df_ordenado = df_ordenado.with_columns([pl.when(pl.col('y_true') == 1).then(GANANCIA_ACIERTO).otherwise(-COSTO_ESTIMULO).alias('ganancia_individual')])
+  
+    # Calcular ganancia acumulada
+    df_ordenado = df_ordenado.with_columns([pl.col('ganancia_individual').cast(pl.Int64).cum_sum().alias('ganancia_acumulada')])
+  
+    # Encontrar la ganancia máxima y el índice correspondiente
+    ganancia_maxima = df_ordenado.select(pl.col('ganancia_acumulada').max()).item()
+    indice_mejor = df_ordenado.select(pl.col('ganancia_acumulada').arg_max()).item()
+    clientes_optimos = indice_mejor + 1  # +1 porque el índice es 0-based
+
+    # Encontrar la diferencia entre la ganancia máxima y la ganancia en el umbral de 0.025
+    
+    ganancia_025 = df_ordenado.filter(pl.col('y_pred_proba') >= 0.025).select(pl.col('ganancia_acumulada').max()).item()
+    mejora_vs_025 = ganancia_maxima - ganancia_025
+
+    # Obtener el umbral óptimo correspondiente
+    umbral_optimo = df_ordenado.select(pl.col('y_pred_proba').filter(pl.arange(0, pl.count()) == indice_mejor)).item()
+  
+    # Guardar en un dataframe de pandas la ganancia máxima, el umbral óptimo y la cantidad de clientes que dan la ganancia máxima
+    df_resultados = pd.DataFrame({
+        'ganancia_maxima': [ganancia_maxima],
+        'umbral_optimo': [umbral_optimo],
+        'mejora_vs_025': [mejora_vs_025],
+        'clientes_optimos': [clientes_optimos]
+    })  
+    
+    return df_resultados
