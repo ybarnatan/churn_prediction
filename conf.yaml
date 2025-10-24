@@ -1,4 +1,14 @@
-STUDY_NAME:  "LGBM_optimization_Competencia01_Experimento01"
+STUDY_NAME:  "Comp01_Exp032_LGBM"
+
+PROJECT_DIRS:
+  DATA_DIR: "data"
+  LOGS_DIR: "logs"
+  RESULTS_DIR: "resultados"
+  GRAPHICS_DIR: "graficos_resultados"
+  MODELS_DIR: "models"
+  OPTUNA_DIR: "optimization_optuna"
+  REPORTS_DIR: "reportes"
+  KAGGLE_DIR: "kaggle"
 
 competencia01:
   DATA_PATH: "data/competencia_01_crudo.csv"
@@ -13,7 +23,7 @@ competencia01:
   UMBRAL: 0.025
 
 PARAMETROS_LGB:
-    n_trial: 100
+    n_trial: 5 #100 #Cuanto mas mejor pero tarda mas
     num_leaves: [8, 100]
     num_iterations: [50, 1000]
     feature_fraction: [0.1, 1.0]

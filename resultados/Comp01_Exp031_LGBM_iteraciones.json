@@ -1,0 +1,112 @@
+[
+  {
+    "trial_number": 0,
+    "params": {
+      "min_data_in_leaf": 112,
+      "num_leaves": 24,
+      "learning_rate": 0.008265525431611562,
+      "feature_fraction": 0.17351952362504955,
+      "bagging_fraction": 0.6597690185429134
+    },
+    "value": 2236860000.0,
+    "datetime": "2025-10-23T18:06:19.344565",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "mes_train": [
+        202101,
+        202102,
+        202103
+      ],
+      "mes_validacion": 202104
+    }
+  },
+  {
+    "trial_number": 1,
+    "params": {
+      "min_data_in_leaf": 243,
+      "num_leaves": 24,
+      "learning_rate": 0.011466177377970625,
+      "feature_fraction": 0.8341021152316814,
+      "bagging_fraction": 0.6862284314278664
+    },
+    "value": 2350200000.0,
+    "datetime": "2025-10-23T18:06:43.658102",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "mes_train": [
+        202101,
+        202102,
+        202103
+      ],
+      "mes_validacion": 202104
+    }
+  },
+  {
+    "trial_number": 2,
+    "params": {
+      "min_data_in_leaf": 72,
+      "num_leaves": 49,
+      "learning_rate": 0.07563688108438833,
+      "feature_fraction": 0.44618746727688374,
+      "bagging_fraction": 0.5234255420571207
+    },
+    "value": 2540640000.0,
+    "datetime": "2025-10-23T18:07:23.743096",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "mes_train": [
+        202101,
+        202102,
+        202103
+      ],
+      "mes_validacion": 202104
+    }
+  },
+  {
+    "trial_number": 3,
+    "params": {
+      "min_data_in_leaf": 34,
+      "num_leaves": 32,
+      "learning_rate": 0.09718233543327506,
+      "feature_fraction": 0.46128359168998545,
+      "bagging_fraction": 0.28319013064366205
+    },
+    "value": 2454320000.0,
+    "datetime": "2025-10-23T18:08:01.764951",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "mes_train": [
+        202101,
+        202102,
+        202103
+      ],
+      "mes_validacion": 202104
+    }
+  },
+  {
+    "trial_number": 4,
+    "params": {
+      "min_data_in_leaf": 794,
+      "num_leaves": 62,
+      "learning_rate": 0.08190741440202726,
+      "feature_fraction": 0.3622015988952788,
+      "bagging_fraction": 0.7355707551853378
+    },
+    "value": 2576460000.0,
+    "datetime": "2025-10-23T18:08:41.999577",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "mes_train": [
+        202101,
+        202102,
+        202103
+      ],
+      "mes_validacion": 202104
+    }
+  }
+]

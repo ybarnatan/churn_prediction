@@ -9,6 +9,9 @@ import os
 from datetime import datetime
 from .config import *
 from .gain_function import calcular_ganancia, ganancia_lgb_binary, ganancia_evaluator, lgb_gan_eval
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
 
 
 logger = logging.getLogger(__name__)
@@ -101,6 +104,10 @@ def objetivo_ganancia(trial, df) -> float:
     best_iter = cv_result['valid gan_eval-mean'].index(max_ganancia) + 1 # Encuentra en qué iteración se logró esa ganancia máxima.
     trial.set_user_attr("best_iter", best_iter) #Guarda ese dato dentro del trial, así lo podés recuperar después.
     
+    # Guardar cada iteración en JSON
+    guardar_iteracion(trial, max_ganancia * 5)
+    
+
     return max_ganancia * 5  #Como la ganancia es promedio entre los 5 folds, se multiplica por 5 para simular la ganancia total estimada en datos reales (sin dividirlos en folds).
 
     
@@ -118,14 +125,14 @@ def objetivo_ganancia(trial, df) -> float:
     y_pred_binary = (y_pred_proba >= UMBRAL).astype(int)  # Usar mismo umbral que en ganancia_lgb_binary  
     '''
                     
-    ganancia_total = calcular_ganancia(y_val, y_pred_binary)
+    # ganancia_total = calcular_ganancia(y_val, y_pred_binary)
 
-    # Guardar cada iteración en JSON
-    guardar_iteracion(trial, ganancia_total)
+    # # Guardar cada iteración en JSON
+    # guardar_iteracion(trial, ganancia_total)
   
-    logger.info(f"Trial {trial.number}: Ganancia = {ganancia_total:,.0f}")
+    # logger.info(f"Trial {trial.number}: Ganancia = {ganancia_total:,.0f}")
   
-    return ganancia_total
+    # return ganancia_total
 
 
 
@@ -138,12 +145,12 @@ def guardar_iteracion(trial, ganancia, archivo_base=None):
         ganancia: Valor de ganancia obtenido
         archivo_base: Nombre base del archivo (si es None, usa el de config.yaml)
     """
+        
     if archivo_base is None:
-        archivo_base = STUDY_NAME #conf.STUDY_NAME no hce falta porque ya se importó todo de config.
-  
-    # Nombre del archivo único para todas las iteraciones
-    archivo = f"resultados/{archivo_base}_iteraciones.json"
-  
+        archivo_base = STUDY_NAME
+    # Construir ruta: resultados/[STUDY_NAME]_iteraciones.json
+    archivo = os.path.join(RESULTS_DIR, f"{archivo_base}_iteraciones.json")
+    
     # Datos de esta iteración
     iteracion_data = {
         'trial_number': trial.number,
@@ -152,7 +159,7 @@ def guardar_iteracion(trial, ganancia, archivo_base=None):
         'datetime': datetime.now().isoformat(),
         'state': 'COMPLETE',  # Si llegamos aquí, el trial se completó exitosamente
         'configuracion': {
-            'semilla': SEMILLA,
+            'semilla': SEMILLA[0],
             'mes_train': MES_TRAIN,
             'mes_validacion': MES_VALIDACION
         }
@@ -217,18 +224,29 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     #Corro la optimización
     study.optimize(lambda t: objetivo_ganancia(t, df), n_trials=n_trials, show_progress_bar=True, n_jobs=n_jobs, gc_after_trial=True)
 
-    # Generar y guardar el gráfico
+    # Generar y guardar los gráficos
+    # Usamos GRAPHICS_DIR en lugar de "graficos_resultados/"
+    
+    # Importancia de parámetros
     fig_importancia = optuna.visualization.plot_param_importances(study)
-    fig_importancia.write_html(f"graficos_resultados/{STUDY_NAME}_FeatImportance.html")
+    fig_importancia.update_layout(title=f"Importancia de Parámetros - {STUDY_NAME}")
+    importance_path = os.path.join(GRAPHICS_DIR, f"{STUDY_NAME}_FeatImportance.html")
+    fig_importancia.write_html(importance_path) # <-- Usamos GRAPHICS_DIR
+    logger.info(f"Gráfico de Importancia guardado en: {importance_path}")
 
+    # Gráfico de Contorno
     fig_contour = optuna.visualization.plot_contour(study, params=['num_leaves', 'min_data_in_leaf'])
-    fig_contour.write_html(f"graficos_resultados/{STUDY_NAME}_ContourPlot.html")
+    fig_contour.update_layout(title=f"Gráfico Contorno - {STUDY_NAME}")
+    contour_path = os.path.join(GRAPHICS_DIR, f"{STUDY_NAME}_ContourPlot.html")
+    fig_contour.write_html(contour_path) # <-- Usamos GRAPHICS_DIR
+    logger.info(f"Gráfico de Contorno guardado en: {contour_path}")
 
+
+    # Gráfico de Slice
     fig_slice = optuna.visualization.plot_slice(study)
-    fig_slice.write_html(f"graficos_resultados/{STUDY_NAME}_Slice.html")
-    # Resultados
-    logger.info(f"Mejor ganancia: {study.best_value:,.0f}")
-    logger.info(f"Mejores parámetros: {study.best_params}")
+    fig_slice.update_layout(title=f"Gráfico Slice - {STUDY_NAME}")
+    slice_path = os.path.join(GRAPHICS_DIR, f"{STUDY_NAME}_SlicePlot.html")
+    fig_slice.write_html(slice_path) # <-- Usamos GRAPHICS_DIR
+    logger.info(f"Gráfico de Slice guardado en: {slice_path}")
 
     return study
-

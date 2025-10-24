@@ -3,16 +3,20 @@ import os
 import datetime
 import logging
 from src.data_loader import cargar_datos, convertir_clase_ternaria_a_target, agregar_clase_ternaria_duckdb
+from src.optimization import * 
+from src.graficos_optuna import generar_grafico_html_optuna , bayesiana_top5_ganancia
 import src.feature_engeneering as FeatEng
 from src.config import *
-from src.optimization import *
 import optuna
 import lightgbm as lgb
 import numpy as np
 import logging
 import json
 from src.gain_function import calcular_ganancia, ganancia_lgb_binary
+from src.crear_carpetas_proyecto import crear_carpetas_proyecto # Importamos la función
 
+# CREACIÓN DE CARPETAS (DEBE IR PRIMERO)
+crear_carpetas_proyecto()
 
 #Log para el main
 os.makedirs("logs", exist_ok=True) #Corroboro que exista la carpeta logs
@@ -23,27 +27,16 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(name)s %(lineno)d - %(message)s',
     handlers=[
-        logging.FileHandler(f"logs/{nombre}", mode="w", encoding="utf-8"),
+        logging.FileHandler(os.path.join(LOGS_DIR, nombre), mode="w", encoding="utf-8"), # <-- Usamos LOGS_DIR
         logging.StreamHandler()
         ])
 
 logger = logging.getLogger(__name__)
 
-#Configuraciones del YAML en log:
-logger.info("==Configuracion cargada desde YAML==")
-logger.info(f"Study name: {STUDY_NAME}")
-logger.info(f"Data path: {DATA_PATH}")
-logger.info(f"Semilla: {SEMILLA}")
-logger.info(f"Mes train: {MES_TRAIN}")      
-logger.info(f"Mes validacion: {MES_VALIDACION}")
-logger.info(f"Mes test: {MES_TEST}")
-logger.info(f"Ganancia acierto: {GANANCIA_ACIERTO}")
-logger.info(f"Costo estimulo: {COSTO_ESTIMULO}")
-
 
 def main():
     logger.info("Inicio de ejecucion del programa")
-    # Carga de datos
+     # Carga de datos
     #path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
     df_original = cargar_datos(DATA_PATH)
     print("Distribución datos x foto_mes:")
@@ -76,7 +69,12 @@ def main():
     
     
     # Optimizacion de hiperparametros
-    study = optimizacion_bayesiana(df, n_trials = 100)
+    study = optimizacion_bayesiana(df, n_trials = N_TRIALS_OPTUNA)
+    #Guardando el grafico .html de la bayesiana
+    FILE_JSON = f'{STUDY_NAME}_iteraciones' 
+    NOMBRE_ESTUDIO = FILE_JSON.replace('_iteraciones', '') # Usa el nombre del est
+    generar_grafico_html_optuna(NOMBRE_ESTUDIO, FILE_JSON)
+    bayesiana_top5_ganancia(NOMBRE_ESTUDIO, FILE_JSON)
     
     # Análisis de la bayesiana
     logger.info("=== ANALISIS DE RESULTADOS ===")

@@ -154,6 +154,7 @@ def lgb_gan_eval(y_pred, data):
  
     return 'gan_eval', ganancia_maxima , True 
 
+
 #########################################################################################################################
 def analisis_ganancia_completo_polars(y_true, y_pred_proba) -> pd.DataFrame:
     """
