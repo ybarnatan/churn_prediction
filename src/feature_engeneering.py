@@ -279,6 +279,7 @@ def feature_engineering_drop(df: pd.DataFrame, columnas_a_eliminar: list[str]) -
   
     return df
 
+
 def crear_max_ultimos_n_meses(df: pd.DataFrame, columnas: list[str], n_meses: int = 3) -> pd.DataFrame:
     """
     Genera variables con el máximo de los últimos n meses para los atributos especificados utilizando SQL.

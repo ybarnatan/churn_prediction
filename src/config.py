@@ -17,7 +17,6 @@ try:
         _dirs_cfg = _cfgGeneral.get("PROJECT_DIRS", {}) # Cargo la nueva sección
         
         # Asigno las variables de configuracion:
-        #En c/u, el  2do's parametro es el valor por defecto para el yaml.
         STUDY_NAME = _cfgGeneral.get("STUDY_NAME", "Wednesday")
         DATA_PATH = _cfg.get("DATA_PATH", "../data/competencia.csv")
         SEMILLA = _cfg.get("SEMILLA", [42])

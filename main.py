@@ -34,9 +34,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+
 def main():
     logger.info("Inicio de ejecucion del programa")
-     # Carga de datos
+    # Carga de datos
     #path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
     df_original = cargar_datos(DATA_PATH)
     print("Distribución datos x foto_mes:")
@@ -45,28 +46,21 @@ def main():
     #Crear clase_ternaria 
     logger.info("Inicio de creacion clase ternaria")
     df = agregar_clase_ternaria_duckdb(df_original)
-    print("Distribución datos x foto_mes ternaria duckdb:")
-    print(df['foto_mes'].value_counts().sort_index())
-    
-    print(df.head(5))
-
+   
     # Feature engineering | Lags
     # atributos_lags = ["ctrx_quarter"] #Atributos para los cuales quiero crear lags
-    # cant_lags = 5 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
+    # cant_lags = 2 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
     # df = FeatEng.crear_lags(df, columnas = atributos_lags, cant_lag = cant_lags)
     
     # Feature engineering | Deltas
     #atributos_deltas = ["ctrx_quarter"]
-    #cant_deltas = 3
+    #cant_deltas = 2
     #df = FeatEng.crear_deltas(df, columnas=atributos_deltas, cant_deltas=cant_deltas)
 
     # Convertir clase_ternaria a target binario (CONT=0, BAJA+1 y BAJA+2 = 1)
     df = convertir_clase_ternaria_a_target(df)
     print("Distribución datos x foto_mes df desp de ternaria a target:")
     print(df_original['foto_mes'].value_counts().sort_index())
-    
-    print(df.head(5))
-    
     
     # Optimizacion de hiperparametros
     study = optimizacion_bayesiana(df, n_trials = N_TRIALS_OPTUNA)

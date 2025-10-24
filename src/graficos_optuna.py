@@ -112,7 +112,6 @@ def bayesiana_top5_ganancia(study_name_yaml: str, file_json_name: str):
     logger.info(f"Datos Top 5 procesados: {df_top5.shape[0]} trials.")
 
     # 4. Generar el gráfico interactivo (Barplot)
-    
     titulo = f"5 mejores modelos y su promedio<br>{study_name_yaml}"
     
     # Convertir trial_number a string para que Plotly lo trate como categoría en el eje X (barplot)
@@ -129,7 +128,7 @@ def bayesiana_top5_ganancia(study_name_yaml: str, file_json_name: str):
     # Añadir el promedio de TODOS los trials como una línea horizontal
     fig.add_hline(y=promedio_ganancia, line_dash="dot", line_color="red",annotation_text=f"Promedio ({promedio_ganancia:,.0f})", annotation_position="top right")
 
-..    # Personalización
+    # Personalización
     fig.update_layout(
         title_font_size=16,
         xaxis_title="Número de Trial",
