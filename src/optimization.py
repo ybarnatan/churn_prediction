@@ -211,18 +211,22 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     study_name = STUDY_NAME
 
     logger.info(f"Iniciando optimización con {n_trials} trials")
-    logger.info(f"Configuración: TRAIN={MES_TRAIN}, VALID={MES_VALIDACION}, SEMILLA={SEMILLA}")
+    logger.info(f"Configuración: TRAIN = {MES_TRAIN}, VALID = {MES_VALIDACION}, SEMILLA = {SEMILLA}")
 
     study = optuna.create_study(
         direction="maximize",
         study_name=study_name,
-        sampler=optuna.samplers.TPESampler(seed=SEMILLA[0])
+        sampler=optuna.samplers.TPESampler(seed=SEMILLA)
         # storage=storage_name,
         # load_if_exists=True,
     )
 
     #Corro la optimización
     study.optimize(lambda t: objetivo_ganancia(t, df), n_trials=n_trials, show_progress_bar=True, n_jobs=n_jobs, gc_after_trial=True)
+    
+    #Resultados
+    logger.info(f"Mejor ganancia: {study.best_value:,.0f} en el trial {study.best_trial.number}")
+    logger.info(f"Mejores hiperparámetros: {study.best_trial.params}")
 
     # Generar y guardar los gráficos
     # Usamos GRAPHICS_DIR en lugar de "graficos_resultados/"
@@ -250,3 +254,102 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     logger.info(f"Gráfico de Slice guardado en: {slice_path}")
 
     return study
+
+
+def evaluar_en_test(df, mejores_params) -> dict:
+    """
+    Evalúa el modelo con los mejores hiperparámetros en el conjunto de test.
+        * Entrenamiento: MES_TRAIN + MES_VALIDACION
+        * Evaluación: MES_TEST 
+    Solo calcula la ganancia, sin usar sklearn.
+  
+    Args:
+        df: DataFrame con todos los datos
+        mejores_params: Mejores hiperparámetros encontrados por Optuna
+  
+    Returns:
+        dict: Resultados de la evaluación en test (ganancia + estadísticas básicas)
+    """
+    logger.info("=== EVALUACIÓN EN CONJUNTO DE TEST ===")
+    logger.info(f"Período de test: {MES_TEST}")
+  
+    # Preparar datos de entrenamiento (TRAIN + VALIDACION)
+    if isinstance(MES_TRAIN, list):
+        periodos_entrenamiento = MES_TRAIN + [MES_VALIDACION]
+    else:
+        periodos_entrenamiento = [MES_TRAIN, MES_VALIDACION]
+  
+    df_train_completo = df[df['foto_mes'].isin(periodos_entrenamiento)]
+    df_test = df[df['foto_mes'] == MES_TEST]
+  
+    # Entrenar modelo con mejores parámetros
+    logger.info("Entrenando modelo con mejores hiperparámetros...")
+    logger.info(f'Dimensiones df_train_completo: {df_train_completo.shape}, Dimensiones df_test: {df_test.shape}')
+
+
+    # # Preparar dataseT de LightGBM
+    train_data = lgb.Dataset(df_train_completo.drop(columns=['clase_ternaria']), 
+                             label=df_train_completo['clase_ternaria'].values)
+    # chequeo si train_data está ok
+    logger.info(f"Tipo de dato de train_data: {type(train_data)}, Dimensiones de train_data: {train_data.data.shape}")
+
+    #Se entrena el modelo usando los mejores parámetros y una función de evaluación ganancia_evaluator
+    model = lgb.train(
+        mejores_params,
+        train_data,
+        #num_boost_round=1000,
+        #valid_sets=[test_data],
+        #feval=ganancia_lgb_binary,
+        feval=ganancia_evaluator
+      #  callbacks=[lgb.early_stopping(50), lgb.log_evaluation(0)]
+    )
+
+    # #Se generan predicciones probabilísticas  en test (y_pred_proba) del modelo LightGBM.
+    X_test = df_test.drop(columns=['clase_ternaria'])
+    y_test = df_test['clase_ternaria'].values
+    y_pred_proba = model.predict(X_test)
+
+    # # Buscar el umbral que maximiza la ganancia >LightGBM devuelve probabilidades; aquí se busca el umbral que maximiza la ganancia.
+    # #Para cada umbral: Se convierte la predicción en binaria. => Se calcula la ganancia usando calcular_ganancia. => Se guarda el umbral y predicción que dan la mayor ganancia
+    mejor_ganancia = -np.inf
+    mejor_umbral = 0.5
+    umbrales = np.linspace(0, 1, 201)  
+
+    for umbral in umbrales:
+        y_pred_bin = (y_pred_proba >= umbral).astype(int)
+        ganancia = calcular_ganancia(y_test, y_pred_bin)
+        if ganancia > mejor_ganancia:
+            mejor_ganancia = ganancia
+            mejor_umbral = umbral
+            y_pred_binary = y_pred_bin  # Guardar predicción óptima
+
+    ganancia_test = mejor_ganancia
+
+    # Estadísticas básicas
+    total_predicciones = len(y_pred_binary)
+    predicciones_positivas = np.sum(y_pred_binary == 1)
+    porcentaje_positivas = (predicciones_positivas / total_predicciones) * 100
+  
+    resultados = {
+        'ganancia_test': float(ganancia_test),
+        'umbral_optimo': float(mejor_umbral),
+        'total_predicciones': int(total_predicciones),
+        'predicciones_positivas': int(predicciones_positivas),
+        'porcentaje_positivas': float(porcentaje_positivas),
+        'semilla': SEMILLA[0]
+    }
+  
+    return resultados
+
+
+
+
+def guardar_resultados_test(resultados_test, archivo_base=None):
+    """
+    Guarda los resultados de la evaluación en test en un archivo JSON.
+    """
+    # Guarda en resultados/{STUDY_NAME}_test_results.json
+    # ... Implementar utilizando la misma logica que cuando guardamos una iteracion de la Bayesiana
+
+
+

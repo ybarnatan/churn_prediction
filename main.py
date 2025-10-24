@@ -64,6 +64,7 @@ def main():
     
     # Optimizacion de hiperparametros
     study = optimizacion_bayesiana(df, n_trials = N_TRIALS_OPTUNA)
+    
     #Guardando el grafico .html de la bayesiana
     FILE_JSON = f'{STUDY_NAME}_iteraciones' 
     NOMBRE_ESTUDIO = FILE_JSON.replace('_iteraciones', '') # Usa el nombre del est
@@ -80,8 +81,9 @@ def main():
             logger.info(f"  Trial {trial['number']}: {trial['value']:,.0f}")
   
     logger.info("=== OPTIMIZACIÓN COMPLETADA ===")
+    ganancia_test = evaluar_en_test(df, study.best_params)
     
-    # Guardar el df resultante
+    # Guardar el df resultante post Feat Eng, post ternaria, post todo.
     logger.info("Guardando el DataFrame resultante en un archivo CSV")
     output_path = "data/competencia_01.csv"
     df.to_csv(output_path, index=False)    
