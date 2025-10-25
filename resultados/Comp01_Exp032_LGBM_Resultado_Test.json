@@ -1,0 +1,48 @@
+[
+  {
+    "Mes_test": 202106,
+    "ganancia_test": 0.0,
+    "date_time": "2025-10-25T15:15:57.986551",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "meses_train": [
+        202101,
+        202102,
+        202103,
+        202104
+      ]
+    },
+    "resultados": {
+      "ganancia_test": 0.0,
+      "umbral_optimo": 0.0,
+      "total_predicciones": 164313,
+      "predicciones_positivas": 163987,
+      "porcentaje_positivas": 99.80159816934753,
+      "semilla": 80021
+    }
+  },
+  {
+    "Mes_test": 202106,
+    "ganancia_test": 0.0,
+    "date_time": "2025-10-25T15:21:59.957263",
+    "state": "COMPLETE",
+    "configuracion": {
+      "semilla": 80021,
+      "meses_train": [
+        202101,
+        202102,
+        202103,
+        202104
+      ]
+    },
+    "resultados": {
+      "ganancia_test": 0.0,
+      "umbral_optimo": 0.0,
+      "total_predicciones": 164313,
+      "predicciones_positivas": 164063,
+      "porcentaje_positivas": 99.8478513568616,
+      "semilla": 80021
+    }
+  }
+]

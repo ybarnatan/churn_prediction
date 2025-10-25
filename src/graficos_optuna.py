@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+
 def generar_grafico_html_optuna(study_name_yaml: str, file_json_name: str):
     """
     Carga el historial de trials desde el JSON, genera el gráfico de evolución 
@@ -39,9 +40,6 @@ def generar_grafico_html_optuna(study_name_yaml: str, file_json_name: str):
     df_procesado = df.groupby('trial_number', as_index=False)['value'].max()
     logger.info(f"Datos procesados: Reducidos a {len(df_procesado)} puntos (máx. ganancia por trial).")
 
-
-    # 3. Generar el gráfico interactivo con Plotly Express
-    
     # Usa el study_name_yaml pasado como parámetro para el título
     titulo = f"Evolucion de ganancia por trial de optuna.<br>{study_name_yaml}"
     

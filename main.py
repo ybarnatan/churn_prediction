@@ -14,14 +14,18 @@ import logging
 import json
 from src.gain_function import calcular_ganancia, ganancia_lgb_binary
 from src.crear_carpetas_proyecto import crear_carpetas_proyecto # Importamos la función
+from src.best_params import *
+from src.final_training import *
 
-# CREACIÓN DE CARPETAS (DEBE IR PRIMERO)
+
+
+# CREACIÓN DE CARPETAS (DEBE IR PRIMERO QUE NADA Y FUERA DEL MAIN)
 crear_carpetas_proyecto()
 
 #Log para el main
 os.makedirs("logs", exist_ok=True) #Corroboro que exista la carpeta logs
 fecha = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-nombre = f"log_fecha_{fecha}.log"
+nombre = f"log_{STUDY_NAME}_{fecha}.log"
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -37,16 +41,17 @@ logger = logging.getLogger(__name__)
 
 def main():
     logger.info("Inicio de ejecucion del programa")
-    # Carga de datos
+    
+    #00 Cargar datos y crear clase ternaria
     #path = "C:/Users/ybbar/OneDrive/Desktop/DMEyF2025_Competencia01_Proyect_Wedesnday/data/competencia_01_crudo.csv"
     df_original = cargar_datos(DATA_PATH)
     print("Distribución datos x foto_mes:")
     print(df_original['foto_mes'].value_counts().sort_index())
-    
-    #Crear clase_ternaria 
     logger.info("Inicio de creacion clase ternaria")
     df = agregar_clase_ternaria_duckdb(df_original)
    
+    # 01 Feature Engeneering
+    
     # Feature engineering | Lags
     # atributos_lags = ["ctrx_quarter"] #Atributos para los cuales quiero crear lags
     # cant_lags = 2 #Cantidad de lags a crear (1 mes atras, 2 meses atras, etc)
@@ -57,12 +62,13 @@ def main():
     #cant_deltas = 2
     #df = FeatEng.crear_deltas(df, columnas=atributos_deltas, cant_deltas=cant_deltas)
 
+    #02 Convertir clase_ternaria a target binario
     # Convertir clase_ternaria a target binario (CONT=0, BAJA+1 y BAJA+2 = 1)
     df = convertir_clase_ternaria_a_target(df)
     print("Distribución datos x foto_mes df desp de ternaria a target:")
     print(df_original['foto_mes'].value_counts().sort_index())
     
-    # Optimizacion de hiperparametros
+    # 03 Optimizacion de hiperparametros
     study = optimizacion_bayesiana(df, n_trials = N_TRIALS_OPTUNA)
     
     #Guardando el grafico .html de la bayesiana
@@ -71,7 +77,7 @@ def main():
     generar_grafico_html_optuna(NOMBRE_ESTUDIO, FILE_JSON)
     bayesiana_top5_ganancia(NOMBRE_ESTUDIO, FILE_JSON)
     
-    # Análisis de la bayesiana
+    # # 04 Adicional  Análisis de la bayesiana
     logger.info("=== ANALISIS DE RESULTADOS ===")
     trials_df = study.trials_dataframe()
     if len(trials_df) > 0:
@@ -81,16 +87,61 @@ def main():
             logger.info(f"  Trial {trial['number']}: {trial['value']:,.0f}")
   
     logger.info("=== OPTIMIZACIÓN COMPLETADA ===")
-    ganancia_test = evaluar_en_test(df, study.best_params)
+    
+    #05 Test en mes desconocido
+    logger.info("=== EVALUACIÓN EN CONJUNTO DE TEST ===")
+    # Cargar mejores hiperparámetros  
+    mejores_hiperparam = cargar_mejores_hiperparametros()
+    #Evaluo en test
+    resultados_test = evaluar_en_test(df, mejores_hiperparam)
+    #Guardar resultados de test
+    guardar_resultados_test(resultados_test)
+
+    # Resumen de evaluación en test
+    logger.info("=== RESUMEN DE EVALUACIÓN EN TEST ===")
+    logger.info(f"✅ Ganancia en test: {resultados_test['ganancia_test']:,.0f}")
+    logger.info(f"🎯 Predicciones positivas: {resultados_test['predicciones_positivas']:,} ({resultados_test['porcentaje_positivas']:.2f}%)")
+    
+    # 06 Entrenamiento modelo final
+    logger.info("=== ENTRENAMIENTO FINAL ===")
+    logger.info("Preparar datos para entrenamiento final")
+    X_train, y_train, X_predict, clientes_predict = preparar_datos_entrenamiento_final(df)
+    logger.info("Entrenar modelo final")
+    modelo_final = entrenar_modelo_final(X_train, y_train, mejores_hiperparam)
+    
+    #Guardo el modelo final
+    ruta_modelo_final = os.path.join(MODELS_DIR, f"{STUDY_NAME}_modelo_final.txt")
+    modelo_final.save_model(ruta_modelo_final)
+    logger.info(f"Modelo final guardado en: {ruta_modelo_final}")
+    
+    #Generar predicciones 
+    logger.info("Generar predicciones finales")
+    envios = cargar_mejores_envios()
+    predicciones = generar_predicciones_finales(X_predict, clientes_predict, envios) #predicciones = generar_predicciones_finales(modelo_final, X_predict, clientes_predict)
+    
+    #Guardo las predicciones
+    logger.info("Guardar predicciones")
+    salida_kaggle = guardar_predicciones(predicciones)
+    logger.info(f"Predicciones guardadas en: {salida_kaggle}")
+    
+    # Resumen final
+    logger.info("=== RESUMEN FINAL ===")
+    logger.info(f"✅ Entrenamiento final completado exitosamente")
+    logger.info(f"📊 Mejores hiperparámetros utilizados: {mejores_hiperparam}")
+    logger.info(f"🎯 Períodos de entrenamiento: {FINAL_TRAIN}")
+    logger.info(f"🔮 Período de predicción: {FINAL_PREDICT}")
+    logger.info(f"📁 Archivo de salida: {salida_kaggle}")
+    logger.info(f"📝 Log detallado: logs/{nombre}")
     
     # Guardar el df resultante post Feat Eng, post ternaria, post todo.
     logger.info("Guardando el DataFrame resultante en un archivo CSV")
     output_path = "data/competencia_01.csv"
     df.to_csv(output_path, index=False)    
     
+    
     print("Semillas que vienen del config.yaml:", SEMILLA)
     
-    logger.info(f"Fin de ejecucion del programa. Revisar detalle en logs/{nombre}")
+    logger.info(f"F>>> Ejecución finalizada. Revisar detalle en logs/{nombre}")
 
 if __name__ == "__main__": # Asegura que solo se ejecute main() si corremos "python main.py" en terminal, pero no ejecute main() si lo importamos en otro archivo.
     main()

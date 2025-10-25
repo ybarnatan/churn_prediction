@@ -209,6 +209,8 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     """
 
     study_name = STUDY_NAME
+    storage_path = os.path.join(OPTUNA_DIR, f"{study_name}.db")
+    storage_url = f"sqlite:///{storage_path}"
 
     logger.info(f"Iniciando optimización con {n_trials} trials")
     logger.info(f"Configuración: TRAIN = {MES_TRAIN}, VALID = {MES_VALIDACION}, SEMILLA = {SEMILLA}")
@@ -216,6 +218,8 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     study = optuna.create_study(
         direction="maximize",
         study_name=study_name,
+        storage=storage_url,
+        load_if_exists=True,    
         sampler=optuna.samplers.TPESampler(seed=SEMILLA)
         # storage=storage_name,
         # load_if_exists=True,
@@ -255,7 +259,7 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
 
     return study
 
-
+'''
 def evaluar_en_test(df, mejores_params) -> dict:
     """
     Evalúa el modelo con los mejores hiperparámetros en el conjunto de test.
@@ -340,6 +344,113 @@ def evaluar_en_test(df, mejores_params) -> dict:
     }
   
     return resultados
+'''
+
+import numpy as np
+import lightgbm as lgb
+import gc
+
+
+def evaluar_en_test(df, mejores_params) -> dict:
+    """
+    Evalúa el modelo con los mejores hiperparámetros en el conjunto de test.
+    Solo calcula la ganancia, sin usar sklearn.
+  
+    Args:
+        df: DataFrame con todos los datos
+        mejores_params: dict - mejores hiperparámetros encontrados por Optuna
+  
+    Returns:
+        dict: Resultados de la evaluación en test (ganancia + estadísticas básicas)
+    """
+    logger.info("=== EVALUACIÓN EN CONJUNTO DE TEST ===")
+    logger.info(f"Período de test: {MES_TEST}")
+  
+    # === 1. Preparar datos de entrenamiento (TRAIN + VALIDACION) ===
+    if isinstance(MES_TRAIN, list):
+        periodos_entrenamiento = MES_TRAIN + [MES_VALIDACION]
+    else:
+        periodos_entrenamiento = [MES_TRAIN, MES_VALIDACION]
+  
+    df_train_completo = df[df['foto_mes'].isin(periodos_entrenamiento)].copy()
+    df_test = df[df['foto_mes'] == MES_TEST].copy()
+
+    logger.info(f"Dimensiones entrenamiento: {df_train_completo.shape}, test: {df_test.shape}")
+
+    # === 2. Preparar datasets para LightGBM ===
+    X_train = df_train_completo.drop(columns=['clase_ternaria'])
+    y_train = df_train_completo['clase_ternaria'].values
+
+    X_test = df_test.drop(columns=['clase_ternaria'])
+    y_test = df_test['clase_ternaria'].values
+
+    train_data = lgb.Dataset(X_train, label=y_train)
+
+    logger.info("Entrenando modelo con los mejores hiperparámetros...")
+
+    # === 3. Entrenar modelo ===
+    model = lgb.train(
+        mejores_params,
+        train_data,
+        feval=ganancia_evaluator  # función de evaluación personalizada
+    )
+
+    # === 4. Predicciones en test ===
+    y_pred_proba = model.predict(X_test)
+
+    # === 5. Buscar el umbral óptimo que maximiza la ganancia ===
+    mejor_ganancia = -np.inf
+    mejor_umbral = 0.5
+    umbrales = np.linspace(0, 1, 201)  # de 0.0 a 1.0 en pasos de 0.005
+
+    for umbral in umbrales:
+        y_pred_bin = (y_pred_proba >= umbral).astype(int)
+        ganancia = calcular_ganancia(y_test, y_pred_bin)
+        if ganancia > mejor_ganancia:
+            mejor_ganancia = ganancia
+            mejor_umbral = umbral
+            y_pred_binary = y_pred_bin  # guardar la mejor predicción
+
+    ganancia_test = mejor_ganancia
+
+    # === 6. Estadísticas básicas ===
+    total_predicciones = len(y_pred_binary)
+    predicciones_positivas = np.sum(y_pred_binary == 1)
+    porcentaje_positivas = (predicciones_positivas / total_predicciones) * 100
+
+    # === 7. Crear diccionario de resultados ===
+    resultados = {
+        'ganancia_test': float(ganancia_test),
+        'umbral_optimo': float(mejor_umbral),
+        'total_predicciones': int(total_predicciones),
+        'predicciones_positivas': int(predicciones_positivas),
+        'porcentaje_positivas': float(porcentaje_positivas),
+        'semilla': SEMILLA[0] if isinstance(SEMILLA, list) else SEMILLA
+    }
+
+    logger.info(f"Ganancia en test: {ganancia_test:.2f}, Umbral óptimo: {mejor_umbral:.3f}")
+    logger.info(f"Porcentaje de positivos: {porcentaje_positivas:.2f}%")
+
+    # === 8. Liberar memoria ===
+    del df_train_completo, df_test, X_train, X_test, y_train, y_test, train_data, model
+    gc.collect()
+
+    return resultados
+
+
+import os
+import json
+import logging
+from datetime import datetime
+# Importaciones necesarias de config.py (asumiendo que config.py es ejecutado y exporta estas variables)
+from .config import (
+    STUDY_NAME,
+    RESULTS_DIR,
+    SEMILLA,
+    FINAL_PREDICT
+)
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -348,8 +459,52 @@ def guardar_resultados_test(resultados_test, archivo_base=None):
     """
     Guarda los resultados de la evaluación en test en un archivo JSON.
     """
-    # Guarda en resultados/{STUDY_NAME}_test_results.json
-    # ... Implementar utilizando la misma logica que cuando guardamos una iteracion de la Bayesiana
+    """
+    Args:
+        archivo_base: Nombre base del archivo (si es None, usa el de config.yaml)
+    """
+    if archivo_base is None:
+        archivo_base = STUDY_NAME
+  
+    # Nombre del archivo único para todas las iteraciones
+    archivo = f"resultados/{archivo_base}_Resultado_Test.json"
+  
+    # Cargar datos existentes si el archivo ya existe
+    if os.path.exists(archivo):
+        with open(archivo, 'r') as f:
+            try:
+                datos_existentes = json.load(f)
+                if not isinstance(datos_existentes, list):
+                    datos_existentes = []
+            except json.JSONDecodeError:
+                datos_existentes = []
+    else:
+        datos_existentes = []
+    
 
+    if isinstance(MES_TRAIN, list):
+        periodos_entrenamiento = MES_TRAIN + [MES_VALIDACION]
+    else:
+        periodos_entrenamiento = [MES_TRAIN, MES_VALIDACION]
 
+    iteracion_data = {
+        'Mes_test': MES_TEST,
+        'ganancia_test': float(resultados_test['ganancia_test']),
+        'date_time': datetime.now().isoformat(),
+        'state': 'COMPLETE',
+        'configuracion':{
+            'semilla': resultados_test['semilla'],
+            'meses_train': periodos_entrenamiento
+        },
+        'resultados':resultados_test
+    }
 
+    # Agregar nueva iteración
+    datos_existentes.append(iteracion_data)
+  
+    # Guardar todas las iteraciones en el archivo
+    with open(archivo, 'w') as f:
+        json.dump(datos_existentes, f, indent=2)
+  
+    #logger.info(f"Iteración {trial.number} guardada en {archivo}")
+    logger.info(f"Ganancia: {resultados_test['ganancia_test']:,.0f}" + "---" + f"Total Predicciones positivas: {resultados_test['predicciones_positivas']:,.0f}")

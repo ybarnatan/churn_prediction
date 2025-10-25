@@ -2,6 +2,7 @@ import json
 import logging
 from .config import STUDY_NAME
 
+
 logger = logging.getLogger(__name__)
 
 def cargar_mejores_hiperparametros(archivo_base: str = None) -> dict:
@@ -9,7 +10,7 @@ def cargar_mejores_hiperparametros(archivo_base: str = None) -> dict:
     Carga los mejores hiperparámetros desde el archivo JSON de iteraciones de Optuna.
   
     Args:
-        archivo_base: Nombre base del archivo (si es None, usa STUDY_NAME)
+        archivo_base: Nombre base del archivo, el json de Optuna (si es None, usa STUDY_NAME)
   
     Returns:
         dict: Mejores hiperparámetros encontrados
@@ -87,4 +88,47 @@ def obtener_estadisticas_optuna(archivo_base=None):
   
     except Exception as e:
         logger.error(f"Error al obtener estadísticas: {e}")
+        raise
+    
+    
+    
+def cargar_mejores_envios(archivo_base: str = None) -> int:
+    """
+    Carga los mejores envios desde el archivo JSON de resultados de test.
+
+    Args:
+        archivo_base: Nombre base del archivo (si es None, usa STUDY_NAME)
+
+    Returns:
+        int: Mejores envios
+    """
+    if archivo_base is None:
+        archivo_base = STUDY_NAME
+
+    archivo = f"resultados/{archivo_base}_Resultado_Test.json"
+
+    try:
+        with open(archivo, 'r') as f:
+            resultados = json.load(f)
+
+        if not resultados:
+            raise ValueError("No se encontraron resultados en el archivo")
+
+        # Encontrar la iteración con mayor ganancia
+        print("DEBUG cargar_mejores_envios -> resultados:", resultados)
+        envios = resultados[0]["resultados"]["predicciones_positivas"]
+        ganancia = resultados[0]["resultados"]["ganancia_test"]
+
+        logger.info(f"Mejores envios cargados desde {archivo}")
+        logger.info(f"Mejor ganancia encontrada en test: {ganancia:,.0f}")
+        logger.info(f"Envios: {envios}")
+
+        return envios
+    
+    except FileNotFoundError:
+        logger.error(f"No se encontró el archivo {archivo}")
+        logger.error("Asegúrate de haber ejecutado la evaluacion en test primero.")
+        raise
+    except Exception as e:
+        logger.error(f"Error al cargar los mejores envios: {e}")
         raise

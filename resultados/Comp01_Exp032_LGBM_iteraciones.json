@@ -2,344 +2,14 @@
   {
     "trial_number": 0,
     "params": {
-      "min_data_in_leaf": 112,
-      "num_leaves": 24,
-      "learning_rate": 0.008265525431611562,
-      "feature_fraction": 0.17351952362504955,
-      "bagging_fraction": 0.6597690185429134
-    },
-    "value": 2239300000.0,
-    "datetime": "2025-10-23T19:52:37.701388",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 1,
-    "params": {
-      "min_data_in_leaf": 243,
-      "num_leaves": 24,
-      "learning_rate": 0.011466177377970625,
-      "feature_fraction": 0.8341021152316814,
-      "bagging_fraction": 0.6862284314278664
-    },
-    "value": 2343260000.0,
-    "datetime": "2025-10-23T19:53:08.947825",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 2,
-    "params": {
-      "min_data_in_leaf": 72,
-      "num_leaves": 49,
-      "learning_rate": 0.07563688108438833,
-      "feature_fraction": 0.44618746727688374,
-      "bagging_fraction": 0.5234255420571207
-    },
-    "value": 2519920000.0,
-    "datetime": "2025-10-23T19:53:55.006038",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 3,
-    "params": {
-      "min_data_in_leaf": 34,
-      "num_leaves": 32,
-      "learning_rate": 0.09718233543327506,
-      "feature_fraction": 0.46128359168998545,
-      "bagging_fraction": 0.28319013064366205
-    },
-    "value": 2454840000.0,
-    "datetime": "2025-10-23T19:54:39.076819",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 4,
-    "params": {
-      "min_data_in_leaf": 794,
-      "num_leaves": 62,
-      "learning_rate": 0.08190741440202726,
-      "feature_fraction": 0.3622015988952788,
-      "bagging_fraction": 0.7355707551853378
-    },
-    "value": 2558780000.0,
-    "datetime": "2025-10-23T19:55:27.010475",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 0,
-    "params": {
-      "min_data_in_leaf": 112,
-      "num_leaves": 24,
-      "learning_rate": 0.008265525431611562,
-      "feature_fraction": 0.17351952362504955,
-      "bagging_fraction": 0.6597690185429134
-    },
-    "value": 2239320000.0,
-    "datetime": "2025-10-23T19:58:30.967481",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 1,
-    "params": {
-      "min_data_in_leaf": 243,
-      "num_leaves": 24,
-      "learning_rate": 0.011466177377970625,
-      "feature_fraction": 0.8341021152316814,
-      "bagging_fraction": 0.6862284314278664
-    },
-    "value": 2351380000.0,
-    "datetime": "2025-10-23T19:58:55.789895",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 2,
-    "params": {
-      "min_data_in_leaf": 72,
-      "num_leaves": 49,
-      "learning_rate": 0.07563688108438833,
-      "feature_fraction": 0.44618746727688374,
-      "bagging_fraction": 0.5234255420571207
-    },
-    "value": 2527200000.0,
-    "datetime": "2025-10-23T19:59:36.486112",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 3,
-    "params": {
-      "min_data_in_leaf": 34,
-      "num_leaves": 32,
-      "learning_rate": 0.09718233543327506,
-      "feature_fraction": 0.46128359168998545,
-      "bagging_fraction": 0.28319013064366205
-    },
-    "value": 2458760000.0,
-    "datetime": "2025-10-23T20:00:15.450822",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 4,
-    "params": {
-      "min_data_in_leaf": 794,
-      "num_leaves": 62,
-      "learning_rate": 0.08190741440202726,
-      "feature_fraction": 0.3622015988952788,
-      "bagging_fraction": 0.7355707551853378
-    },
-    "value": 2551760000.0,
-    "datetime": "2025-10-23T20:00:57.184218",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 0,
-    "params": {
-      "min_data_in_leaf": 112,
-      "num_leaves": 24,
-      "learning_rate": 0.008265525431611562,
-      "feature_fraction": 0.17351952362504955,
-      "bagging_fraction": 0.6597690185429134
-    },
-    "value": 2234000000.0,
-    "datetime": "2025-10-24T17:13:33.842208",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 1,
-    "params": {
-      "min_data_in_leaf": 243,
-      "num_leaves": 24,
-      "learning_rate": 0.011466177377970625,
-      "feature_fraction": 0.8341021152316814,
-      "bagging_fraction": 0.6862284314278664
-    },
-    "value": 2339400000.0,
-    "datetime": "2025-10-24T17:13:57.188417",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 2,
-    "params": {
-      "min_data_in_leaf": 72,
-      "num_leaves": 49,
-      "learning_rate": 0.07563688108438833,
-      "feature_fraction": 0.44618746727688374,
-      "bagging_fraction": 0.5234255420571207
-    },
-    "value": 2511220000.0,
-    "datetime": "2025-10-24T17:14:35.530899",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 3,
-    "params": {
-      "min_data_in_leaf": 34,
-      "num_leaves": 32,
-      "learning_rate": 0.09718233543327506,
-      "feature_fraction": 0.46128359168998545,
-      "bagging_fraction": 0.28319013064366205
-    },
-    "value": 2459640000.0,
-    "datetime": "2025-10-24T17:15:12.614097",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 4,
-    "params": {
-      "min_data_in_leaf": 794,
-      "num_leaves": 62,
-      "learning_rate": 0.08190741440202726,
-      "feature_fraction": 0.3622015988952788,
-      "bagging_fraction": 0.7355707551853378
-    },
-    "value": 2572120000.0,
-    "datetime": "2025-10-24T17:15:52.330902",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 0,
-    "params": {
       "min_data_in_leaf": 714,
       "num_leaves": 58,
       "learning_rate": 0.010683571581613776,
       "feature_fraction": 0.9733272319497346,
       "bagging_fraction": 0.18051527801112793
     },
-    "value": 2388980000.0,
-    "datetime": "2025-10-24T20:10:43.947260",
+    "value": 2388720000.0,
+    "datetime": "2025-10-25T15:15:05.103989",
     "state": "COMPLETE",
     "configuracion": {
       "semilla": 80021,
@@ -360,8 +30,8 @@
       "feature_fraction": 0.4554750960006819,
       "bagging_fraction": 0.9679564950746088
     },
-    "value": 2522880000.0,
-    "datetime": "2025-10-24T20:11:33.500210",
+    "value": 2537440000.0,
+    "datetime": "2025-10-25T15:15:50.493146",
     "state": "COMPLETE",
     "configuracion": {
       "semilla": 80021,
@@ -374,16 +44,16 @@
     }
   },
   {
-    "trial_number": 2,
+    "trial_number": 0,
     "params": {
-      "min_data_in_leaf": 799,
-      "num_leaves": 33,
-      "learning_rate": 0.0883849153583352,
-      "feature_fraction": 0.9971225795066343,
-      "bagging_fraction": 0.4926935396202614
+      "min_data_in_leaf": 714,
+      "num_leaves": 58,
+      "learning_rate": 0.010683571581613776,
+      "feature_fraction": 0.9733272319497346,
+      "bagging_fraction": 0.18051527801112793
     },
-    "value": 2519720000.0,
-    "datetime": "2025-10-24T20:11:58.011956",
+    "value": 2372400000.0,
+    "datetime": "2025-10-25T15:21:08.707810",
     "state": "COMPLETE",
     "configuracion": {
       "semilla": 80021,
@@ -396,38 +66,16 @@
     }
   },
   {
-    "trial_number": 3,
+    "trial_number": 1,
     "params": {
-      "min_data_in_leaf": 563,
-      "num_leaves": 85,
-      "learning_rate": 0.1666300207171083,
-      "feature_fraction": 0.4495254530641407,
-      "bagging_fraction": 0.97463509003951
+      "min_data_in_leaf": 458,
+      "num_leaves": 84,
+      "learning_rate": 0.02762707789479262,
+      "feature_fraction": 0.4554750960006819,
+      "bagging_fraction": 0.9679564950746088
     },
-    "value": 2579500000.0,
-    "datetime": "2025-10-24T20:12:46.163969",
-    "state": "COMPLETE",
-    "configuracion": {
-      "semilla": 80021,
-      "mes_train": [
-        202101,
-        202102,
-        202103
-      ],
-      "mes_validacion": 202104
-    }
-  },
-  {
-    "trial_number": 4,
-    "params": {
-      "min_data_in_leaf": 595,
-      "num_leaves": 26,
-      "learning_rate": 0.12313491401564015,
-      "feature_fraction": 0.11493109061010293,
-      "bagging_fraction": 0.7125541971861871
-    },
-    "value": 2476200000.0,
-    "datetime": "2025-10-24T20:13:15.242598",
+    "value": 2522660000.0,
+    "datetime": "2025-10-25T15:21:52.597474",
     "state": "COMPLETE",
     "configuracion": {
       "semilla": 80021,

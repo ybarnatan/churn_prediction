@@ -23,6 +23,8 @@ try:
         MES_TRAIN = _cfg.get("MES_TRAIN", "202102")
         MES_VALIDACION = _cfg.get("MES_VALIDACION", "202103")
         MES_TEST = _cfg.get("MES_TEST", "202104")
+        FINAL_TRAIN = _cfg.get("FINAL_TRAIN", '202101')
+        FINAL_PREDICT = _cfg.get("FINAL_PREDICT", '202106')
         GANANCIA_ACIERTO = _cfg.get("GANANCIA_ACIERTO", None)
         COSTO_ESTIMULO = _cfg.get("COSTO_ESTIMULO", None)
         PARAMETROS_LGB = _cfgGeneral.get("PARAMETROS_LGB", {})

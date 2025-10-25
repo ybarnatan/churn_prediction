@@ -1,4 +1,4 @@
-STUDY_NAME:  "Comp01_Exp032_LGBM"
+STUDY_NAME:  "Comp01_Exp034_LGBM"
 
 PROJECT_DIRS:
   DATA_DIR: "data"
@@ -19,11 +19,11 @@ competencia01:
   GANANCIA_ACIERTO: 780000
   COSTO_ESTIMULO: 20000
   FINAL_TRAIN:  [202103, 202104]  # [202101, 202102,202103,202104]
-  FINAL_PREDIC: 202106
+  FINAL_PREDICT: 202106
   UMBRAL: 0.025
 
 PARAMETROS_LGB:
-    n_trial: 5 #100 #Cuanto mas mejor pero tarda mas
+    n_trial: 10  #100 #Cuanto mas mejor, pero tarda mas
     num_leaves: [8, 100]
     num_iterations: [50, 1000]
     feature_fraction: [0.1, 1.0]
