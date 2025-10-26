@@ -1,4 +1,4 @@
-STUDY_NAME:  "Comp01_Exp035_LGBM"
+STUDY_NAME:  "Comp01_Exp036_LGBM"
 
 PROJECT_DIRS:
   DATA_DIR: "data"
@@ -29,7 +29,7 @@ competencia01:
 
 
 PARAMETROS_LGB:
-    n_trial: 5 #100 #Cuanto mas mejor, pero tarda mas
+    n_trial: 100 #100 #Cuanto mas mejor, pero tarda mas
     num_leaves: [8, 100]
     num_iterations: [50, 1000]
     feature_fraction: [0.1, 1.0]

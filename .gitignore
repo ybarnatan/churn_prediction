@@ -1,4 +1,12 @@
 .venv/
 __pycache__/
-logs/
 data/
+graficos_resultados/
+kaggle/
+logs/
+models/
+optimization_optuna/
+reportes/
+resultados/
+
+
