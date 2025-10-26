@@ -1,21 +1,17 @@
 import optuna
 import lightgbm as lgb
-# from lightgbm import early_stopping, log_evaluation
 import pandas as pd
 import numpy as np
 import logging
 import json
 import os
 from datetime import datetime
+import gc
+
 from .config import *
 from .gain_function import calcular_ganancia, ganancia_lgb_binary, ganancia_evaluator, lgb_gan_eval
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-
 
 logger = logging.getLogger(__name__)
-
 
 
 def objetivo_ganancia(trial, df) -> float:
@@ -52,7 +48,7 @@ def objetivo_ganancia(trial, df) -> float:
         'verbose': -1
     }
 
-    # #Preparo datasets para train y validacion -> Filtro segun periodos
+    # Preparo datasets para train y validacion -> Filtro segun periodos
     if isinstance(MES_TRAIN, list): #Si df_train es una lista
         meses_train_str = [str(m) for m in MES_TRAIN]
         df_train = df[df['foto_mes'].astype(str).isin(meses_train_str)]   
@@ -61,7 +57,6 @@ def objetivo_ganancia(trial, df) -> float:
         df_train = df[df['foto_mes'].astype(str) == mes_train_str]
     
     df_val = df[df['foto_mes'] == MES_VALIDACION]
-    
     
     # Validaciones tempranas por posibles errores de filtrado en fechas/formato de fechas.
     if df_train.empty:
@@ -72,7 +67,6 @@ def objetivo_ganancia(trial, df) -> float:
         raise ValueError("df_train no contiene ambas clases (0 y 1).")
 
     # Usar target (con clase ternaria ya convertida a binaria)
-    
     y_train = df_train['clase_ternaria'].values
     y_val = df_val['clase_ternaria'].values
 
@@ -85,10 +79,10 @@ def objetivo_ganancia(trial, df) -> float:
     val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
     
      #Aquí se entrena y valida el modelo con 5-fold cross-validation, usando los hiperparámetros definidos arriba.
-    cv_result = lgb.cv(
+    cv_result = lgb.cv(         # Uso LGBM CV = dividir el data en k folds -> promedia los resultados de mis k modelos.
         params,
         train_data,
-        num_boost_round = 300,      # Modificar, subit y subir... y descomentar la línea inferior
+        num_boost_round = 300,      # Modificar, subir y subir... y descomentar la línea inferior
         #early_stopping_rounds= int(50+5 / (param['learning_rate']))  ,   # Corta el entrenamiento si el modelo deja de mejorar durante N rondas consecutivas.
         feval=lgb_gan_eval,
         stratified=True,
@@ -101,14 +95,14 @@ def objetivo_ganancia(trial, df) -> float:
     )
 
     max_ganancia = max(cv_result['valid gan_eval-mean']) # Toma la máxima ganancia promedio alcanzada entre los 5 folds.
+    ganancia_total = max_ganancia * 5#Como la ganancia es promedio entre los k=5 folds, se multiplica por k=5 para simular la ganancia total estimada en datos reales (sin dividirlos en k=5 folds).
     best_iter = cv_result['valid gan_eval-mean'].index(max_ganancia) + 1 # Encuentra en qué iteración se logró esa ganancia máxima.
     trial.set_user_attr("best_iter", best_iter) #Guarda ese dato dentro del trial, así lo podés recuperar después.
     
     # Guardar cada iteración en JSON
-    guardar_iteracion(trial, max_ganancia * 5)
+    guardar_iteracion(trial, ganancia_total)
     
-
-    return max_ganancia * 5  #Como la ganancia es promedio entre los 5 folds, se multiplica por 5 para simular la ganancia total estimada en datos reales (sin dividirlos en folds).
+    return ganancia_total  
 
     
     '''
@@ -233,7 +227,6 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     logger.info(f"Mejores hiperparámetros: {study.best_trial.params}")
 
     # Generar y guardar los gráficos
-    # Usamos GRAPHICS_DIR en lugar de "graficos_resultados/"
     
     # Importancia de parámetros
     fig_importancia = optuna.visualization.plot_param_importances(study)
@@ -248,7 +241,6 @@ def optimizacion_bayesiana(df, n_trials=100, n_jobs=1) -> optuna.Study:
     contour_path = os.path.join(GRAPHICS_DIR, f"{STUDY_NAME}_ContourPlot.html")
     fig_contour.write_html(contour_path) # <-- Usamos GRAPHICS_DIR
     logger.info(f"Gráfico de Contorno guardado en: {contour_path}")
-
 
     # Gráfico de Slice
     fig_slice = optuna.visualization.plot_slice(study)
@@ -345,11 +337,6 @@ def evaluar_en_test(df, mejores_params) -> dict:
   
     return resultados
 '''
-
-import numpy as np
-import lightgbm as lgb
-import gc
-
 
 def evaluar_en_test(df, mejores_params) -> dict:
     """

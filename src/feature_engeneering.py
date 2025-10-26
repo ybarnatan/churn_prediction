@@ -26,7 +26,16 @@ def crear_lags(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd.D
     """
 
     logger.info(f"Realizando feature engineering con {cant_lag} lags para {len(columnas) if columnas else 0} atributos")
+    #Nro columnas antes de este F.E.
+    n_inicial = df.shape[1]
+    logger.info(f"[LAGS] Columnas iniciales: {n_inicial}")
 
+    # Calcular cuántas columnas nuevas se van a crear (solo las que existen)
+    columnas_validas = [c for c in columnas if c in df.columns]
+    n_nuevas = len(columnas_validas) * cant_lag
+    logger.info(f"[LAGS] Se agregarán {n_nuevas} columnas nuevas ({cant_lag} por cada uno de {len(columnas_validas)} atributos válidos)")
+
+    
     if columnas is None or len(columnas) == 0:
         logger.warning("No se especificaron atributos para generar lags")
         return df
@@ -53,10 +62,9 @@ def crear_lags(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd.D
     df = con.execute(sql).df()
     con.close()
 
-    #print(df.head())
-  
-    logger.info(f"Feature engineering completado. DataFrame resultante con {df.shape[1]} columnas")
-
+    #Nro columnas desp de este F.E.
+    n_final = df.shape[1]
+    logger.info(f"[LAGS] Feature engineering completado. Columnas finales: {n_final} (se agregaron {n_final - n_inicial})")
     return df
 
 
@@ -81,13 +89,16 @@ def crear_deltas(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd
 
     logger.info(f"Realizando feature engineering de delta lag con {cant_lag} lags para {len(columnas) if columnas else 0} atributos")
 
+    n_inicial = df.shape[1]
+    logger.info(f"[DELTAS] Columnas iniciales: {n_inicial}")
+
     if columnas is None or len(columnas) == 0:
         logger.warning("No se especificaron atributos para generar delta lags")
         return df
 
     # Construir la consulta SQL
     sql = "SELECT *"
-
+    
     # Agregar los delta lags para los atributos especificados
     for attr in columnas:
         if attr in df.columns:
@@ -110,7 +121,8 @@ def crear_deltas(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd
     df = con.execute(sql).df()
     con.close()
 
-    logger.info(f"Feature engineering de delta lag completado. DataFrame resultante con {df.shape[1]} columnas")
+    n_final = df.shape[1]
+    logger.info(f"[DELTAS] Feature engineering de delta lag completado. Columnas finales: {n_final} (se agregaron {n_final - n_inicial})")
 
     return df
 
@@ -507,7 +519,8 @@ def cambio_estado(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> p
 #######################################################################################
 # ######################## MIAS  no usadas  ####################################################
 #######################################################################################
-def crear_lags_MIAS(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd.DataFrame:
+
+def crear_lags_YBB(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) -> pd.DataFrame:
     """
     Genera variables de lag para los atributos especificados utilizando SQL.
   
@@ -559,7 +572,7 @@ def crear_lags_MIAS(df: pd.DataFrame, columnas: list[str], cant_lag: int = 1) ->
     return df
 
 
-def crear_deltas_MIAS(df: pd.DataFrame, columnas: list[str], cant_deltas: int = 1) -> pd.DataFrame:
+def crear_deltas_YBB(df: pd.DataFrame, columnas: list[str], cant_deltas: int = 1) -> pd.DataFrame:
     """
     Genera variables de delta (diferencia con meses anteriores) para los atributos especificados utilizando SQL.
 

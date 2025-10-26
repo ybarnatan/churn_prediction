@@ -5,7 +5,6 @@ import logging
 from .config import STUDY_NAME, RESULTS_DIR, GRAPHICS_DIR # Importamos las constantes
 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 

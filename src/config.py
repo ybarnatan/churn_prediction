@@ -30,7 +30,11 @@ try:
         PARAMETROS_LGB = _cfgGeneral.get("PARAMETROS_LGB", {})
         UMBRAL = _cfg.get("UMBRAL", 0.025)
         N_TRIALS_OPTUNA = PARAMETROS_LGB.get("n_trial", 100)
-        
+        FE_ATRIBUTOS = _cfg.get("FE_ATRIBUTOS", [])
+        CANT_LAGS = _cfg.get("CANT_LAGS", 2)
+        CANT_DELTAS = _cfg.get("CANT_DELTAS", 2)
+
+
         # --- Variables de carpetas ---
         DIRS_TO_CREATE = list(_dirs_cfg.values())
         if "src" not in DIRS_TO_CREATE:

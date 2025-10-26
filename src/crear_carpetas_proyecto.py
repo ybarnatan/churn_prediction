@@ -1,16 +1,7 @@
 import os
 import logging
-
-# Configuración básica de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-import os
-import logging
 from .config import DIRS_TO_CREATE, LOGS_DIR # Importa la lista de carpetas y una variable de ejemplo para el log
 
-# Configuración básica de logging
-# Nota: La configuración principal del logger se hará en main.py, esto es para que el script funcione de forma independiente si es necesario.
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.StreamHandler()])
 logger = logging.getLogger(__name__)
 
 

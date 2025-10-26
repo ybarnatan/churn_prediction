@@ -2,7 +2,6 @@ import json
 import logging
 from .config import STUDY_NAME
 
-
 logger = logging.getLogger(__name__)
 
 def cargar_mejores_hiperparametros(archivo_base: str = None) -> dict:
